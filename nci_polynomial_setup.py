@@ -77,6 +77,7 @@ def graph_aware_estimator(n, p, y, A, z, beta):
     est = est + y[i]*w
 
   return est/n
+
 ########################################
 # Randomized Design
 ########################################
