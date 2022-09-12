@@ -113,17 +113,48 @@ def symmetrizeGraph(A):
             A[i,j] = A[j,i]
     return A
 
-def lattice1D():
-    pass
+def lattice1D(x):
+    '''
+    Returns adjacency matrix of an x-node line graph as a sparse matrix
+    
+    x (int): number of nodes in the x direction
+    y (int): number of nodes in the y direction
+    '''
+    G = nx.grid_graph(dim=x)
+    A = nx.to_scipy_sparse_matrix(G)
+    A.setdiag(np.ones(x))
+    return A 
 
-def lattice2D():
-    pass
-
-def lattice3D():
-    pass
+def lattice2D(x,y):
+    '''
+    Returns adjacency matrix of an x by y lattice graph on x*y nodes as a sparse matrix
+    
+    x (int): number of nodes in the x direction
+    y (int): number of nodes in the y direction
+    '''
+    G = nx.grid_graph(dim=(x,y))
+    A = nx.to_scipy_sparse_matrix(G)
+    A.setdiag(np.ones(x*y))
+    return A 
 
 def rand_points_2D():
     # randomly place points on a 2D plane... randomly add edges???
+    pass
+
+def sbm():
+    '''
+    TODO: stochasic block model
+    '''
+    pass
+
+def lattice3D(x,y,z):
+    '''
+    Returns adjacency matrix of an x by y by z lattice graph on x*y*z nodes as a sparse matrix
+    
+    x (int): number of nodes in the x direction
+    y (int): number of nodes in the y direction
+    z (int): number of nodes in the z direction
+    '''
     pass
 
 ##############################################
