@@ -121,11 +121,12 @@ def lattice1D(x):
     y (int): number of nodes in the y direction
     '''
     G = nx.grid_graph(dim=x)
+    G = nx.DiGraph(G)
     A = nx.to_scipy_sparse_matrix(G)
     A.setdiag(np.ones(x))
     return A 
 
-def lattice2D(x,y):
+def lattice2Dsq(x,y):
     '''
     Returns adjacency matrix of an x by y lattice graph on x*y nodes as a sparse matrix
     
@@ -133,6 +134,19 @@ def lattice2D(x,y):
     y (int): number of nodes in the y direction
     '''
     G = nx.grid_graph(dim=(x,y))
+    G = nx.DiGraph(G)
+    A = nx.to_scipy_sparse_matrix(G)
+    A.setdiag(np.ones(x*y))
+    return A 
+
+def lattice2Dtr(x,y):
+    '''
+    Returns adjacency matrix of an x by y triangle lattice graph on x*y nodes as a sparse matrix
+    
+    x (int): number of nodes in the x direction
+    y (int): number of nodes in the y direction
+    '''
+    G = nx.triangular_lattice_graph(x,y,create_using=nx.DiGraph)
     A = nx.to_scipy_sparse_matrix(G)
     A.setdiag(np.ones(x*y))
     return A 
