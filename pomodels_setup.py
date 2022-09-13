@@ -6,7 +6,7 @@ import numpy as np
 linear_pom = lambda C,alph,z : C.dot(z) + alph
 
 # Linear Additive Model I from Gui, Xu, Bhasin, Han (2015) paper
-linear_add1 = lambda alph,beta,gam,A,z : alph + beta*z + gam*(z.dot(A)/np.sum(A,axis=0))
+linear_add1 = lambda alph,beta,gam,A,z : alph + beta*z + gam*((A.dot(z) - z) / (np.array(A.sum(axis=1)).flatten()-1+1e-10))
 
 def lin_additive2(alp0, alp1, gam0, gam1, A, z):
     '''
@@ -17,7 +17,7 @@ def lin_additive2(alp0, alp1, gam0, gam1, A, z):
     A (scipy sparse matrix): adjacency matrix of the network
     z (numpy array): treatment vector
     '''
-    frac_treated = z.dot(A)/np.sum(A,axis=0)
+    frac_treated = (A.dot(z) - z) / (np.array(A.sum(axis=1)).flatten()-1+1e-10)
     indicator0 = (z==0)*1
     indicator1 = (z==1)*1
     lam2 = (indicator0 * (alp0 + gam0*frac_treated)) + (indicator1 * (alp1 + gam1*frac_treated))
