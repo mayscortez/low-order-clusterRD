@@ -1,8 +1,48 @@
 import numpy as np
 
 #####################################################
-# Cluster Randomized Designs
+# Clustering
 #####################################################
+def lattice_cluster1D():
+  pass
+
+def lattice_cluster2D():
+  pass
+
+def square_cluster(k,L):
+  '''
+  Clustering of a k by k lattice graph where each cluster is an L by L grid graph
+
+  k (int): indicates we want to cluster a k by k lattice graph
+  L (int): L should be a positive integer dividing k i.e. k%L=0
+  
+  We end up with c = (k*k)/(L*L) clusters where each cluster is an L by L lattice
+
+  clusters (numpy array): cluster[i] = j indicates the i-th individual belongs to cluster j
+  for i=0,1,...,n-1 and j=0,1,...,c-1 where n = k*k is the total number of nodes in the graph
+  '''
+  a = k/L           # number of clusters per row or column
+  c = k**2//L**2     # total number of clusters
+  C = np.zeros((k,k)) # represents the nodes of a k by k lattice graph
+  row_start = 0     # 
+  row_end = L
+  col_start = 0
+  col_end = L
+
+  for i in range(1,c):
+    if (i%a == 0):
+      row_start = row_start + L
+      row_end = row_end + L
+      col_start = 0
+      col_end = L
+    else:
+      col_start = col_start + L
+      col_end = col_end + L
+    C[row_start:row_end, col_start:col_end] = i
+  
+  clusters = C.flatten()
+  return clusters
+
 def threenet(A):
     '''
     # TODO:
@@ -40,14 +80,31 @@ def threenet(A):
     print(np.amin(s))
     return clusters
 
-def lattice_cluster1D():
-    pass
-
-def lattice_cluster2D():
-    pass
+def one_hop_max():
+  pass
 
 def lattice_cluster3D():
     pass
+
+#####################################################
+# Cluster Randomized Designs
+#####################################################
+def bernoulli_cluster(c,p,clusters):
+  '''
+  c (int): number of clusters
+  p (float): treatment probability in (0,1)
+  clusters (numpy array): clusters[i] = j says unit i is in cluster j
+
+  z (numpy array): i-th element is treatment assignment of unit i
+  Cz (numpy array): j-th element is treatment assignment of cluster j
+  '''
+  Cz = (np.random.rand(c) < p) + 0
+  treated_cluster_indices = np.where(Cz == 1)[0]
+  z = np.isin(clusters,treated_cluster_indices)+0
+  return Cz, z
+
+def stratified_cluster():
+  pass
 
 #####################################################
 # Unit Randomized Designs
