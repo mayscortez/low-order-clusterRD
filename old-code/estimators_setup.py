@@ -17,8 +17,22 @@ def SNIPE_linear(n, p, y, A, z):
     zz = z/p - (1-z)/(1-p)
     return 1/n * y.dot(A.dot(zz))
 
-def SNIPE_beta():
-    pass
+def SNIPE_beta(n, p, y, A, z, beta):
+    # n = z.size
+    # z = z.reshape((n,1))
+    treated_neighb = A.dot(z)
+    control_neighb = A.dot(1-z)
+    est = 0
+    for i in range(n):
+        w = 0
+        a_lim = min(beta,int(treated_neighb[i]))
+        for a in range(a_lim+1):
+            b_lim = min(beta - a,int(control_neighb[i]))
+            for b in range(b_lim+1):
+                w = w + ((1-p)**(a+b) - (-p)**(a+b)) * p**(-a) * (p-1)**(-b) * special.binom(treated_neighb[i],a)  * special.binom(control_neighb[i],b)
+        est = est + y[i]*w
+
+    return est/n
 
 def CRD_SNIPE_linear_old(n, p, y, A, z, clusters=np.array([])):
     '''
@@ -26,7 +40,7 @@ def CRD_SNIPE_linear_old(n, p, y, A, z, clusters=np.array([])):
 
     n (int): number of individuals
     p (float): treatment probability
-    y (TODO): TODO
+    y (np array): outcomes
     A (square numpy array): network adjacency matrix
     z (numpy array): treatment vector
     cluster (numpy array): TODO
@@ -103,23 +117,6 @@ def graph_agnostic(n, sums, H):
     sums (numpy array): sums of outcomes at each time step
     '''
     return (1/n)*H.dot(sums)
-
-def graph_aware_estimator(n, p, y, A, z, beta):
-    # n = z.size
-    # z = z.reshape((n,1))
-    treated_neighb = A.dot(z)
-    control_neighb = A.dot(1-z)
-    est = 0
-    for i in range(n):
-        w = 0
-        a_lim = min(beta,int(treated_neighb[i]))
-        for a in range(a_lim+1):
-            b_lim = min(beta - a,int(control_neighb[i]))
-            for b in range(b_lim+1):
-                w = w + ((1-p)**(a+b) - (-p)**(a+b)) * p**(-a) * (p-1)**(-b) * special.binom(treated_neighb[i],a)  * special.binom(control_neighb[i],b)
-        est = est + y[i]*w
-
-    return est/n
 
 def poly_interp_splines(n, P, sums, spltyp = 'quadratic'):
   '''

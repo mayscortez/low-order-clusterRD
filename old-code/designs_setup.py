@@ -1,4 +1,5 @@
 import numpy as np
+from sklearn.cluster import SpectralClustering
 
 #####################################################
 # Clustering
@@ -6,9 +7,53 @@ import numpy as np
 def lattice_cluster1D():
   pass
 
-def lattice_cluster2D():
-  pass
+def sqlat_toCluster(I,J,k,q1=0,q2=0,divides = False):
+  '''
+  Returns the cluster assignment (s,t) of unit(s) (i,j) for i in I and j in J
 
+  i (int or np.array): row position of unit on n by n lattice (or array of row positions)
+  j (int or np.array): column position of unit on n by n lattice (or array of col positions)
+  k (int): typical cluster side length (each cluster is itself a k by k grid graph with k << n)
+  q1 (int): "origin" row position marking the end (inclusive) of first cluster
+  q2 (int): "origin" col position marking the end (inclusive) of first cluster
+  divides (boolean): if k divides n should be set to True
+  '''
+  if divides:
+    s = np.floor(I/k)
+    t = np.floor(J/k)
+  else:
+    s = np.ceil((I-q1)/k)
+    t = np.ceil((J-q2)/k)
+  
+  return s.astype(int),t.astype(int)
+
+def sqlat_toUnit(s,t,k,n,q1=0,q2=0):
+  '''
+  Returns the row indicdes I & column indices J (from the n by n lattice) corresponding to cluster (s,t)
+
+  s (int): row position of cluster
+  t (int): column position of cluster
+  k (int): typical cluster side length (each cluster is itself a k by k grid graph with k << n)
+  n (int): population is represented by an n by n square lattice/grid graph
+  q1 (int): "origin" row position marking the end (inclusive) of first cluster
+  q2 (int): "origin" col position marking the end (inclusive) of first cluster
+  '''
+  if n%k==0:
+    starti = np.maximum(0,s*k)
+    stopi = (s+1)*k - 1
+    startj = np.maximum(0,t*k)
+    stopj = (t+1)*k - 1
+  else:
+    starti = np.maximum(0,q1 + 1 + (s-1)*k)
+    stopi = np.minimum(q1 + s*k, n-1)
+    startj = np.maximum(0,q2 + 1 + (t-1)*k)
+    stopj = np.minimum(q2 + t*k, n-1)
+  
+  I = np.linspace(starti,stopi,stopi-starti+1,dtype=int)
+  J = np.linspace(startj,stopj,stopj-startj+1,dtype=int)
+  
+  return I,J
+    
 def square_cluster(k,L):
   '''
   Clustering of a k by k lattice graph where each cluster is an L by L grid graph
@@ -23,7 +68,7 @@ def square_cluster(k,L):
   '''
   a = k/L           # number of clusters per row or column
   c = k**2//L**2     # total number of clusters
-  C = np.zeros((k,k)) # represents the nodes of a k by k lattice graph
+  C = np.ones((k,k)) # represents the nodes of a k by k lattice graph
   row_start = 0     # 
   row_end = L
   col_start = 0
@@ -38,10 +83,38 @@ def square_cluster(k,L):
     else:
       col_start = col_start + L
       col_end = col_end + L
-    C[row_start:row_end, col_start:col_end] = i
+    C[row_start:row_end, col_start:col_end] = i+1
   
   clusters = C.flatten()
   return clusters
+
+def spectral_cluster_rand(positions, num_clusters, p, seed):
+    """ from Michael Leung's Code
+    Generates spatial clusters and treatments via cluster randomization.
+
+    Parameters
+    ----------
+    positions : numpy array
+        n x d array of d-dimensional positions, one for each of the n units.
+    num_clusters : int
+        number of clusters.
+    p : float
+        probability of assignment to treatment.
+    seed : int
+        set seed for k-means clustering initialization.
+
+    Returns
+    -------
+    D : numpy array
+        n x 1 array of treatment indicators, one for each of the n units.
+    clusters : numpy array
+        n x 1 array of cluster assignments, one for each of the n units. Clusters are labeled 0 to num_clusters-1.
+    """
+    clustering = SpectralClustering(n_clusters=num_clusters, random_state=seed).fit(positions)
+    clusters = clustering.labels_ 
+    cluster_rand = np.random.binomial(1, p, num_clusters)
+    D = np.array([cluster_rand[clusters[i]] for i in range(positions.shape[0])])
+    return D, clusters
 
 def threenet(A):
     '''

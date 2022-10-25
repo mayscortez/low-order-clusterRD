@@ -3,17 +3,12 @@ TODO: description
 '''
 
 # Setup
-from math import sqrt
 import numpy as np
 import pandas as pd
 import sys
 import time
 import scipy.sparse
-import nci_linear_setup as ncls
-import designs_setup as ds
-import estimators_setup as es
-import networks_setup as ns
-import pomodels_setup as ps
+import setup_functions as sf
 
 #path_to_module = 'Code-for-Experiments/'
 #sys.path.append(path_to_module)
@@ -130,7 +125,7 @@ def run_experiment(G,T,n,p,r,graphStr,diag=1,loadGraphs=False):
         rand_wts = np.random.rand(n,3)
 
         alpha = rand_wts[:,0].flatten()
-        C = ncls.simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+        C = ns.simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
         
         # potential outcomes model
         fy = lambda z: ps.linear_pom(C,alpha,z)
@@ -156,7 +151,7 @@ def run_experiment(G,T,n,p,r,graphStr,diag=1,loadGraphs=False):
 
         for i in range(T):
             dict_base.update({'rep': i, 'Rand': 'CRD'})
-            z = ncls.completeRD(n,int(np.floor(p*n)))
+            z = sf.completeRD(n,int(np.floor(p*n)))
             y = fy(z)
 
             for ind in range(len(CRD_est)):
@@ -165,7 +160,7 @@ def run_experiment(G,T,n,p,r,graphStr,diag=1,loadGraphs=False):
                 results.append(dict_base.copy())
 
             dict_base.update({'Rand': 'Bernoulli'})
-            z = ncls.bernoulli(n,p)
+            z = sf.bernoulli(n,p)
             y = fy(z)
 
             for ind in range(len(bern_est)):
