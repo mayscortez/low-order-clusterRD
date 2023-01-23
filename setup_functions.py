@@ -219,13 +219,30 @@ Cluster Randomized Experimental Designs
 def lat_toCluster(I,J,k,q1=0,q2=0,divides = False):
   '''
   Returns the cluster assignment (s,t) of unit(s) (i,j) for i in I and j in J
+  population size: n*n
+  number of clusters: nc*nc
 
-  i (int or np.array): row position of unit on n by n lattice (or array of row positions)
-  j (int or np.array): column position of unit on n by n lattice (or array of col positions)
-  k (int): typical cluster side length (each cluster is itself a k by k grid graph with k << n)
-  q1 (int): "origin" row position marking the END (inclusive) of first cluster
-  q2 (int): "origin" col position marking the END (inclusive) of first cluster
-  divides (boolean): if k divides n should be set to True
+  Parameters
+  -----------
+  i : int or np.array
+        row position of unit on n by n lattice (or array of row positions)
+  j : int or np.array
+        column position of unit on n by n lattice (or array of col positions)
+  k : int
+        typical cluster side length (each cluster is itself a k by k grid graph with k << n)
+  q1 : int
+        "origin" row position marking the END (inclusive) of first cluster
+  q2 : int
+        "origin" col position marking the END (inclusive) of first cluster
+  divides : bool
+        if k divides n, set to True
+
+  Returns
+  -----------
+  s : int
+        row position of the cluster on nc by nc lattice (or array of row positions)
+  t : int
+        column position of the cluster on nc by nc lattice (or array of col positions)
   '''
   if divides:
     s = np.floor(I/k)
@@ -238,14 +255,31 @@ def lat_toCluster(I,J,k,q1=0,q2=0,divides = False):
 
 def lat_toUnit(s,t,k,n,q1=0,q2=0):
   '''
-  Returns the row indicdes I & column indices J (from the n by n lattice) corresponding to cluster (s,t)
+  Returns the (row,column) indices of popluation units (on the n by n lattice) that belong to cluster (s,t)
+  population size: n*n
+  number of clusters: nc*nc
 
-  s (int): row position of cluster
-  t (int): column position of cluster
-  k (int): typical cluster side length (each cluster is itself a k by k grid graph with k << n)
-  n (int): population is represented by an n by n square lattice/grid graph
-  q1 (int): "origin" row position marking the end (inclusive) of first cluster
-  q2 (int): "origin" col position marking the end (inclusive) of first cluster
+  Parameters
+  -----------
+  s (int): 
+    row position of cluster on the nc by nc lattice of clusters
+  t (int):
+    column position of cluster on the nc by nc lattice of clusters
+  k (int):
+    typical cluster side length (average cluster contains k*k units)
+  n (int): 
+    population is represented by an n by n square lattice/grid graph
+  q1 (int):
+    "origin" row position marking the end (inclusive) of first cluster
+  q2 (int):
+    "origin" col position marking the end (inclusive) of first cluster
+  
+  Returns
+  -------
+  I (numpy array):
+    TODO
+  J (numpy array):
+    TODO
   '''
   if n%k==0:
     starti = np.maximum(0,s*k)
@@ -294,24 +328,56 @@ def bernoulli_cluster(num,p,clusters):
   '''
   num (int): number of clusters (should be a perfect square nc*nc)
   p (float): treatment probability in (0,1)
-  clusters (n by 1 numpy array): clusters[i] = j says unit i in [n] is in cluster j
+  clusters (N by 1 numpy array): clusters[i] = j says unit i in [N] is in cluster j in [NC]
 
   z (numpy array): i-th element is treatment assignment of unit i
   Cz (numpy array): (s,t)-th element is treatment assignment of cluster (s,t)
   flatCz (numpy array): given cluster label k in [nc*nc], return treatment assignment
   '''
-  nc = int(np.sqrt(9))
+  nc = int(np.sqrt(num))
   Cz = (np.random.rand(nc,nc) < p) + 0 # matrix where (s,t) entry is treatment assignment of cluster (s,t)
   flatCz = Cz.flatten() # each cluster (s,t) gets assigned to an index i in [c] where c = number of clusters = (rows+1)*(cols+1)
   treated_cluster_indices = np.where(flatCz == 1)[0] # returns the index labels of clusters that are assigned to treatment
-  z = np.isin(clusters,treated_cluster_indices)+0 # if 
+  z = np.isin(clusters,treated_cluster_indices)+0 # if a person i is assigned to a treated cluster, then z(i) should equal 1 
   return Cz, flatCz, z
 
+def bf_clusters(num, pop):
+    '''
+    Returns an 1 by N array where the each index corresponds to a unit in the population and the value at that index is their cluster assignment
+
+    Parameters
+    ----------
+    num (int)
+        number of clusters (should be a perfect square nc*nc)
+    pop (int)
+        size of the population (should be a perfect square n*n)
+
+    Returns
+    -------
+    clusters
+        cluster assignments for each person
+    
+    clusters.flatten() (numpy array of size 1 by pop)
+        cluster assignments for each person
+        clusters[i]=j means that population unit i in [pop] is assigned to cluster j in [num]
+    '''
+    
+    nc = int(np.sqrt(num)) #sqrt of the total number of clusters
+    n = int(np.sqrt(pop))  #sqrt of the population size
+    k = int(np.ceil(n/nc)) #"typical" cluster contains k*k units
+    divides = n%k==0
+    clusters = np.zeros((n,n), dtype=int)
+    
+    for i in range(n):
+        for j in range(n):
+            s,t = lat_toCluster(i,j,k,divides=divides) 
+            clusters[i,j] = nc*s + t
+    return clusters, clusters.flatten()
 '''
 Estimators
 SNIPE_linear
 SNIPE_beta
-cluster_neighbors
+cluster_neighborhood
 CRD_SNIPE_linear
 CRD_SNIPE_beta
 horvitz_thompson
@@ -355,11 +421,11 @@ def cluster_neighborhood(A,i,k):
     '''
     pop_size = np.shape(A)[0] 
     n = int(np.sqrt(pop_size))  # population size is n^2
-    nc = int(np.ceil(n/k)**2)   # number of clusters is nc^2
+    #nc = int(np.ceil(n/k)**2)   # number of clusters is nc^2
 
     # get indicies of i's neighbors (nonzero entries in i-th row of A)
-    neighbors = np.flatnonzero(A[i,:])
-
+    neighbors = np.nonzero(A[i,:])[1]
+    
     # We have nc^2 clusters represented by an nc x nc grid
     # We have labels (s,t) in [nc] x [nc] for each cluster
     # We also have labels k in [nc^2] for each cluster
@@ -370,7 +436,7 @@ def cluster_neighborhood(A,i,k):
         # get the (i,j) coordinate of this neighbor on the population lattice [n] x [n]
         i = int(np.floor(x/n))
         j = x % n
-        s,t = lat_toCluster(i,j,k)
+        s,t = lat_toCluster(i,j,k,divides=(n%k==0))
         cluster_assignments.append((s,t))
     
     # remove duplicates
