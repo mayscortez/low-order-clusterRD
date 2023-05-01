@@ -122,7 +122,7 @@ def config_model_nx(N, exp = 2.5, law = "out"):
 
     G.remove_edges_from(nx.selfloop_edges(G)) # remove self-loops
     G = nx.DiGraph(G)                         # remove parallel edges
-    A = nx.to_scipy_sparse_matrix(G)          # retrieve adjacency matrix
+    A = nx.to_scipy_sparse_array(G)          # retrieve adjacency matrix
     A.setdiag(np.ones(N))                     # everyone is affected by their own treatment
 
     return A
@@ -137,7 +137,7 @@ def small_world(n,k,p):
     p (float, in [0,1]): probability of rewiring each edge
     '''
     G = nx.watts_strogatz_graph(n, k, p)
-    A = nx.to_scipy_sparse_matrix(G)                  # retrieve adjacency matrix
+    A = nx.to_scipy_sparse_array(G)                  # retrieve adjacency matrix
     A.setdiag(np.ones(n))                    # everyone is affected by their own treatment
 
     return A
@@ -151,7 +151,7 @@ def lattice2Dsq(x,y):
     '''
     G = nx.grid_graph(dim=(x,y))
     G = nx.DiGraph(G)
-    A = nx.to_scipy_sparse_matrix(G)
+    A = nx.to_scipy_sparse_array(G)
     A.setdiag(np.ones(x*y))
     return A 
 
@@ -424,7 +424,7 @@ def cluster_neighborhood(A,i,k):
     #nc = int(np.ceil(n/k)**2)   # number of clusters is nc^2
 
     # get indicies of i's neighbors (nonzero entries in i-th row of A)
-    neighbors = np.nonzero(A[i,:])[1]
+    neighbors = np.nonzero(A[[i],:])[1]
     
     # We have nc^2 clusters represented by an nc x nc grid
     # We have labels (s,t) in [nc] x [nc] for each cluster
