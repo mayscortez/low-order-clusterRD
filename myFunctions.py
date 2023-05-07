@@ -522,3 +522,38 @@ def poly_regression_num(beta, y, A, z):
       count += 2
   TTE_hat = np.sum((X @ v) - v[0])/n
   return TTE_hat
+
+def diff_in_means_naive(y, z):
+    '''
+    Returns an estimate of the TTE using difference in means
+    (mean outcome of individuals in treatment) - (mean outcome of individuals in control)
+
+    y (numpy array): observed outcomes
+    z (numpy array): treatment vector
+    '''
+    return y.dot(z)/np.sum(z) - y.dot(1-z)/np.sum(1-z)
+
+def diff_in_means_fraction(n, y, A, z, tol):
+    '''
+    Returns an estimate of the TTE using weighted difference in means where 
+    we only count neighborhoods with at least tol fraction of the neighborhood being
+    assigned to treatment or control
+
+    n (int): number of individuals
+    y (numpy array): observed outcomes
+    A (square numpy array): network adjacency matrix
+    z (numpy array): treatment vector
+    tol (float): neighborhood fraction treatment/control "threshhold"
+    '''
+    z = np.reshape(z,(n,1))
+    treated = 1*(A.dot(z)-1 >= tol*(A.dot(np.ones((n,1)))-1))
+    treated = np.multiply(treated,z).flatten()
+    control = 1*(A.dot(1-z)-1 >= tol*(A.dot(np.ones((n,1)))-1))
+    control = np.multiply(control,1-z).flatten()
+
+    est = 0
+    if np.sum(treated) > 0:
+        est = est + y.dot(treated)/np.sum(treated)
+    if np.sum(control) > 0:
+        est = est - y.dot(control)/np.sum(control)
+    return est
