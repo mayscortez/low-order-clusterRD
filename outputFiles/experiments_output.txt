@@ -1,0 +1,38 @@
+Runtime (in seconds) for k = 120 step: 27.194958686828613
+Runtime (in seconds) for k = 120 step: 25.602203845977783
+Runtime (in seconds) for k = 120 step: 25.340182065963745
+Runtime (in seconds) for k = 120 step: 25.0588059425354
+Runtime (in seconds) for k = 120 step: 25.11579918861389
+Runtime (in seconds) for k = 120 step: 25.059046983718872
+Runtime (in seconds) for k = 120 step: 24.79736018180847
+Runtime (in seconds) for k = 120 step: 24.965225219726562
+Runtime (in seconds) for k = 120 step: 25.23245906829834
+Runtime (in seconds) for k = 120 step: 25.314067840576172
+Runtime (in seconds) for k = 120 step: 25.189854383468628
+Runtime (in seconds) for k = 120 step: 25.36429786682129
+Runtime (in seconds) for k = 120 step: 25.452181816101074
+Runtime (in seconds) for k = 120 step: 25.549142837524414
+Runtime (in seconds) for k = 120 step: 25.408312797546387
+Runtime (in seconds) for k = 120 step: 26.447319746017456
+Runtime (size experiment) in minutes: 6.784862236181895
+Runtime (in seconds) for q = 0.2 step: 24.822743892669678
+Runtime (in seconds) for q = 0.3 step: 25.095031023025513
+Runtime (in seconds) for q = 0.4 step: 25.26298713684082
+Runtime (in seconds) for q = 0.5 step: 25.3989520072937
+Runtime (in seconds) for q = 0.6 step: 25.327415943145752
+Runtime (in seconds) for q = 0.7 step: 25.521936893463135
+Runtime (in seconds) for q = 0.8 step: 25.74515390396118
+Runtime (in seconds) for q = 0.9 step: 25.93298578262329
+Runtime (in seconds) for q = 1.0 step: 26.03974986076355
+Runtime (cluster fraction experiment) in minutes: 4.281141229470571
+Runtime (in seconds) for p = 0.2 step: 25.665191888809204
+Runtime (in seconds) for p = 0.3 step: 25.17583918571472
+Runtime (in seconds) for p = 0.4 step: 24.99732208251953
+Runtime (in seconds) for p = 0.5 step: 24.986268758773804
+Runtime (in seconds) for p = 0.6 step: 25.092234134674072
+Runtime (in seconds) for p = 0.7 step: 24.928026914596558
+Runtime (in seconds) for p = 0.8 step: 25.478855848312378
+Runtime (in seconds) for p = 0.9 step: 24.98782515525818
+Runtime (in seconds) for p = 1.0 step: 25.031147956848145
+Runtime (new budget experiment) in minutes: 4.216622630755107
+Runtime (whole script) in minutes: 14.417813034852346
