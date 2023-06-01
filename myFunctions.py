@@ -46,7 +46,7 @@ def ppom(beta, C, alpha):
 
 bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
-def lattice2Dsq(x,y):
+def lattice2Dsq(x,y=1):
     '''
     Returns adjacency matrix of an x by y lattice graph on x*y nodes as a sparse matrix
     
