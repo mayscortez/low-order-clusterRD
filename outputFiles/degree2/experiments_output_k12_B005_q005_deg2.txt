@@ -1,0 +1,30 @@
+Runtime (in seconds) for k = 1 step: 10.752194166183472
+Runtime (in seconds) for k = 2 step: 10.645231008529663
+Runtime (in seconds) for k = 3 step: 8.11086893081665
+Runtime (in seconds) for k = 4 step: 7.750869035720825
+Runtime (in seconds) for k = 5 step: 7.595041036605835
+Runtime (in seconds) for k = 6 step: 7.832885980606079
+Runtime (in seconds) for k = 8 step: 7.397675037384033
+Runtime (in seconds) for k = 10 step: 8.09144926071167
+Runtime (in seconds) for k = 12 step: 7.466932058334351
+Runtime (in seconds) for k = 15 step: 7.625373840332031
+Runtime (in seconds) for k = 20 step: 7.57335901260376
+Runtime (in seconds) for k = 24 step: 7.70502781867981
+Runtime (in seconds) for k = 30 step: 7.589802980422974
+Runtime (in seconds) for k = 50 step: 7.653173923492432
+Runtime (in seconds) for k = 60 step: 7.906302213668823
+Runtime (in seconds) for k = 120 step: 8.17721700668335
+Runtime (size experiment) in minutes: 2.1645654996236163
+Runtime (cluster fraction experiment) in minutes: 1.5547011295954387
+Runtime (in seconds) for p = 0.1 step: 8.294270992279053
+Runtime (in seconds) for p = 0.2 step: 10.894477844238281
+Runtime (in seconds) for p = 0.3 step: 8.18510890007019
+Runtime (in seconds) for p = 0.4 step: 7.960394859313965
+Runtime (in seconds) for p = 0.5 step: 7.671535968780518
+Runtime (in seconds) for p = 0.6 step: 8.046280860900879
+Runtime (in seconds) for p = 0.7 step: 7.694800853729248
+Runtime (in seconds) for p = 0.8 step: 7.745620012283325
+Runtime (in seconds) for p = 0.9 step: 7.697744131088257
+Runtime (in seconds) for p = 1.0 step: 7.578885078430176
+Runtime (new budget experiment) in minutes: 1.5082245826721192
+Runtime (whole script) in minutes: 4.957135581970215
