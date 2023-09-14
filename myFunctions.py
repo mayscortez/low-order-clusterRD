@@ -87,6 +87,51 @@ def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.
 
     return C
 
+def weights_im_normal(n, d=1, sigma=0.1, neg=0):
+    '''
+    Returns weights C (numpy array) under the influence and malleability framework,
+    with Gaussian mean-zero noise.
+
+    n (int): number of individuals
+    d (int): number of influence dimensions
+    sigma (float): standard deviation of noise
+    neg (0 or 1): 0 if restricted to non-negative weights, 1 otherwise
+    '''
+    X = np.random.rand(d,n)              # influence
+    W = np.random.rand(d,n)              # malliability
+
+    if neg==0:
+      E = np.abs(np.random.normal(scale=sigma, size=(n,n)))
+    else:
+      E = np.random.normal(scale=sigma, size=(n,n))
+    C = X.T.dot(W)+E
+    return C
+
+def normalized_weights(C, diag=10, offdiag=8):
+    '''
+    Returns normalized weights (or normalized weighted adjacency matrix) as numpy array
+
+    C (square numpy array): weight matrix (or weighted adjacency matrix)
+    diag (float): controls the magnitude of the diagonal elements
+    offdiag (float): controls the magnitude of the off-diagonal elements
+    '''
+    n = C.shape[0]
+
+    # diagonal elements
+    C_diag = np.ones(n) * diag * np.random.rand(n)
+
+    # remove diagonal elements and normalize off-diagonal elements
+    # normalizes each column by the norm of the column (not including the diagonal element)
+    np.fill_diagonal(C, 0)
+    col_norms = np.linalg.norm(C, axis=0, ord=1)
+    col_norms = np.where(col_norms != 0, col_norms, col_norms+1)
+    C = (C / col_norms) * offdiag * np.random.rand(n)
+
+    # add back the diagonal
+    C += np.diag(C_diag)
+
+    return C
+
 def bf_clusters(num, pop):
     '''
     Returns an 1 by N array where the each index corresponds to a unit in the population and the value at that index is their cluster assignment

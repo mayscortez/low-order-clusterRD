@@ -9,19 +9,24 @@ import sys
 import time
 from myFunctions import *
 
-beta = 2
+beta = 3
 deg_str = '_deg' + str(beta)
-save_path = 'outputFiles/' + 'degree' + str(beta) + '/'
+save_path = 'outputFiles/' + 'degree' + str(beta) + '/' + 'newWeights/'
 
 def main():
-    G = 20
-    T = 20               # number of trials per cluster size
+    G = 10
+    T = 50              # number of trials per cluster size
     graphStr = "120lat"   # square lattice
-
     
-    f = open(save_path +'experiments_output' + deg_str + '.txt', 'w')
+    k_fixed = 12
+    q_fixed = 1
+    B_fixed = 0.1
+    fixed =  '_k' + str(k_fixed) + '_' + 'B' + str(B_fixed).replace('.','') + '_' + 'q' + str(q_fixed).replace('.','')
+    
+    f = open(save_path +'experiments_output' + fixed + deg_str + '.txt', 'w')
 
     startTime1 = time.time()
+
     ###########################################
     # Run Experiment: Varying Cluster Size
     ###########################################
@@ -34,14 +39,12 @@ def main():
     results = []
     sizes = np.array([1,2,3,4,5,6,8,10,12,15,20,24,30,50,60,120])
     #sizes = [1,10,20]
-    B = 0.05        # treatment probability
-    q = 0.9
 
     for k in sizes:
         print("k = {}".format(k))
         startTime2 = time.time()
 
-        results.extend(run_experiment(G,T,N,B,r,k,graphStr,diag=diag,beta=beta,q=q))
+        results.extend(run_experiment(G,T,N,B_fixed,r,k,graphStr,diag=diag,beta=beta,q=q_fixed))
 
         executionTime = (time.time() - startTime2)
         print('Runtime (in seconds) for k = {} step: {}'.format(k,executionTime),file=f)
@@ -51,16 +54,15 @@ def main():
     print('Runtime (size experiment) in minutes: {}'.format(executionTime/60),file=f)   
     print('Runtime (size experiment) in minutes: {}'.format(executionTime/60))        
     df = pd.DataFrame.from_records(results)
-    df.to_csv(save_path + graphStr + '-' + str(q).replace('.','') + '_'+ 'clusterSize-full-data'+deg_str +'.csv')
+    df.to_csv(save_path + graphStr + fixed + '_clusterSize-full-data'+deg_str +'.csv')
     
-    
+
     ###########################################
     # Run Experiment: Varying q
     ###########################################
+    startTime2 = time.time()
     N = 120*120
     n = 120
-    k = 12           # cluster size k by k
-    B = 0.05         # treatment budget
 
     diag = 1        # maximum norm of direct effect
     r = 1.25        # ratio between indirect and direct effects
@@ -73,7 +75,7 @@ def main():
         print("q = {}".format(q))
         startTime3 = time.time()
 
-        results.extend(run_experiment(G,T,N,B,r,k,graphStr,diag=diag,beta=beta,q=q))
+        results.extend(run_experiment(G,T,N,B_fixed,r,k_fixed,graphStr,diag=diag,beta=beta,q=q))
 
         executionTime = (time.time() - startTime3)
         #print('Runtime (in seconds) for q = {} step: {}'.format(q,executionTime),file=f)
@@ -83,7 +85,7 @@ def main():
     print('Runtime (cluster fraction experiment) in minutes: {}'.format(executionTime/60),file=f)   
     print('Runtime (cluster fraction experiment) in minutes: {}'.format(executionTime/60))        
     df = pd.DataFrame.from_records(results)
-    df.to_csv(save_path + graphStr + '-' + str(k) + '_' + 'clusterFraction-full-data'+ deg_str +'.csv')
+    df.to_csv(save_path + graphStr + fixed + '_clusterFraction-full-data'+ deg_str +'.csv')
 
     
     ###########################################
@@ -91,8 +93,6 @@ def main():
     ###########################################
     N = 120*120
     n = 120
-    k = 12           # cluster size k by k
-    B = 0.05         # treatment budget
 
     diag = 1        # maximum norm of direct effect
     r = 1.25        # ratio between indirect and direct effects
@@ -105,7 +105,7 @@ def main():
         print("p = {}".format(p))
         startTime4 = time.time()
 
-        results.extend(run_experiment(G,T,N,B,r,k,graphStr,diag=diag,beta=beta,p=p))
+        results.extend(run_experiment(G,T,N,B_fixed,r,k_fixed,graphStr,diag=diag,beta=beta,p=p))
 
         executionTime = (time.time() - startTime4)
         print('Runtime (in seconds) for p = {} step: {}'.format(p,executionTime),file=f)
@@ -115,13 +115,14 @@ def main():
     print('Runtime (new budget experiment) in minutes: {}'.format(executionTime/60),file=f)   
     print('Runtime (new budget experiment) in minutes: {}'.format(executionTime/60))        
     df = pd.DataFrame.from_records(results)
-    df.to_csv(save_path + graphStr + '-' + str(k) + '_' + 'newBudget-full-data'+ deg_str+'.csv')
+    df.to_csv(save_path + graphStr + fixed + '_newBudget-full-data'+ deg_str+'.csv')
 
     executionTime = (time.time() - startTime1)
     print('Runtime (whole script) in minutes: {}'.format(executionTime/60),file=f)
     print('Runtime (whole script) in minutes: {}'.format(executionTime/60))
     
     sys.stdout.close()
+    
     
 
 def run_experiment(G,T,N,B,r,k,graphStr,diag=1,beta=1,q=-1,p=-1):
@@ -148,7 +149,8 @@ def run_experiment(G,T,N,B,r,k,graphStr,diag=1,beta=1,q=-1,p=-1):
 
         rand_wts = np.random.rand(N,3)
         alpha = rand_wts[:,0].flatten()
-        C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+        #C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+        C = normalized_weights(weights_im_normal(N), diag, offdiag)
         
         # potential outcomes model
         fy = ppom(beta, C, alpha)
