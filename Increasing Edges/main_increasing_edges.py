@@ -9,11 +9,9 @@ import sys
 import time
 from myFunctions import *
 
-beta = 2
-deg_str = '_deg' + str(beta)
-save_path = 'output/' + 'deg' + str(beta)
-
-def main():
+def main(beta):
+    deg_str = '_deg' + str(beta)
+    save_path = 'output/' + 'deg' + str(beta)
     G = 10
     T = 50              # number of trials per cluster size
     graphStr = "120lat"   # square lattice
@@ -205,7 +203,3 @@ def run_experiment(G,T,N,B,r,k,graphStr,diag=1,beta=1,q=-1,p=-1):
                 results.append(dict_base.copy())
 
     return results
-
-
-if __name__ == "__main__":
-    main()
