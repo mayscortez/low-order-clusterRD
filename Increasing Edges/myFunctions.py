@@ -415,7 +415,7 @@ def staggered_rollout_bern(n, selected, P, bndry, P_prime):
   T = len(P)
   Z = np.zeros(shape=(T,n))   # for each treatment sample z_t
   W = np.random.rand(len(selected))
-  W_prime = W = np.random.rand(len(bndry))
+  W_prime = np.random.rand(len(bndry))
 
   ### staggered rollout experiment ###
   for t in range(T):
