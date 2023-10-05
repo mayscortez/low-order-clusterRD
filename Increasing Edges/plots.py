@@ -1,4 +1,3 @@
-# Setup
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -7,24 +6,24 @@ import os
 
 def main():
     graph = "SBM" 
-    n = 10000
-    B = 0.25
-    nc = 4
-    K = 1
+    n = 1000
+    nc = 50
+    K = int(nc/2)
+    B = 0.5
     q_or_K_st = '_K' + str(K)
-    Pii = 10/n
+    Pii = 10/(n/nc) 
     
-    fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + q_or_K_st
+    fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + q_or_K_st  # naming convention
     x_label = [fixed + "_incrEdges", fixed + "_incrEdges", fixed + "_incrEdges"]
-    x_var = ['Pij', 'global', 'average']
-    x_plot = ['Edge probability across clusters $P_{ij}$',
+    x_var = ['out-in', 'global', 'average']
+    x_plot = ['Ratio of edges between vs within communities',
               'Global clustering coefficient $C$',
               'Network Average Clustering Coefficient $C$']
     beta = [1,2,3]
     for b in beta:
-        title = ['$\\beta={}, n={}, B={}, n_c={}, K={}, P_{{{}}}={}$'.format(b, n, B, nc, K, "ii",Pii),
-                 '$\\beta={}, n={}, B={}, n_c={}, K={}, P_{{{}}}={}$'.format(b, n, B, nc, K, "ii",Pii),
-                 '$\\beta={}, n={}, B={}, n_c={}, K={}, P_{{{}}}={}$'.format(b, n, B, nc, K, "ii",Pii)]
+        title = ['$\\beta={}, n={}, B={}, n_c={}, K={}, E[d_i]=10$'.format(b, n, B, nc, K),
+                 '$\\beta={}, n={}, B={}, n_c={}, K={}, E[d_i]=10$'.format(b, n, B, nc, K),
+                 '$\\beta={}, n={}, B={}, n_c={}, K={}, E[d_i]=10$'.format(b, n, B, nc, K)]
         for ind in range(len(x_var)):
             plot(graph,x_var[ind],x_label[ind],b,x_plot[ind],title[ind],b)
 
