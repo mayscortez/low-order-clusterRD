@@ -15,8 +15,8 @@ def main():
     
     fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + q_or_K_st  # naming convention
     x_label = [fixed + "_incrEdges", fixed + "_incrEdges", fixed + "_incrEdges"]
-    x_var = ['out-in', 'global', 'average']
-    x_plot = ['Ratio of edges between vs within communities',
+    x_var = ['Pij', 'global', 'average']
+    x_plot = ['Probability of an edge between 2 communities $P_{out}$',
               'Global clustering coefficient $C$',
               'Network Average Clustering Coefficient $C$']
     beta = [1,2,3]
