@@ -5,7 +5,8 @@ How does the bias and variance of the estimator change as we increase the number
 # Setup
 import numpy as np
 import pandas as pd
-import sys
+import matplotlib.pyplot as plt
+import random
 import time
 from myFunctions import *
 
@@ -18,7 +19,7 @@ def main(beta, graphNum, T):
     nc = 50             # number of communities
     Pii = 10/(n/nc)     # edge probability within communities
 
-    K = nc/2           # number of clusters to be in experiment if choosing via complete RD
+    K = int(nc/2)           # number of clusters to be in experiment if choosing via complete RD
     q = 0.5            # fraction of clusters to be part of the experiment if choosing via Bernoulli RD
     B = 0.5            # original treatment budget
     p_prime = 0        # fraction of the boundary of U to get treated as well
@@ -46,10 +47,11 @@ def main(beta, graphNum, T):
     p_ins = [0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2] # np.linspace(Pii,Pii/2,6)
     for p_in in p_ins:
         p_out = (0.5-p_in)/49
+        p_out = np.around(p_out, 5)
         print("p_in = {} and p_out = {}".format(p_in, p_out))
         startTime2 = time.time()
 
-        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, RD, q_or_K, graphNum, T, graphStr))
+        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, RD, q_or_K, p_prime, graphNum, T, graphStr))
 
         executionTime = (time.time() - startTime2)
         print('Runtime (in seconds) for (p_in,p_out) = ({},{}) step: {}'.format(p_in, p_out,executionTime),file=f)
@@ -90,14 +92,19 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         K = int(np.floor(q*nc))
 
     p = B/q
-    dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'K': K, 'p': p, 'q': q, 'B': B, 'ratio': r,}
+    num_units_in_cluster = n/nc
+    edges_out_over_in = (Pii*(K-1)*num_units_in_cluster) / (Pii*num_units_in_cluster) # ratio of expected number of edges within cluster : outside cluster for each unit
+    dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'K': K, 'p': p, 'q': q, 'B': B, 'ratio': r, 'out-in': edges_out_over_in}
 
     G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
 
     G_transitivity = nx.transitivity(G)
     G_avgClusteringCoeff = nx.average_clustering(G)
     dict_base.update({'global': G_transitivity, 'average': G_avgClusteringCoeff})
-    
+
+    # plot_degrees(G, Pii, Pij)
+    # draw_SBM(n, K, G, Pii, Pij)
+
     results = []
     for g in range(graphNum):
         graph_rep = str(g)
@@ -122,7 +129,6 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         #TODO: Add estimator that only looks at U
         estimators = []
         estimators.append(lambda y,z,sums,H_m: graph_agnostic(n,sums,H_m)/q)
-        #estimators.append(lambda y,z,sums,H_m: graph_agnostic(n,sums,H_m)/q) #TODO
         estimators.append(lambda y,z, sums, H_m: poly_regression_prop(beta, y,A,z))
         estimators.append(lambda y,z, sums, H_m: poly_regression_num(beta, y,A,z))
         estimators.append(lambda y,z,sums,H_m: diff_in_means_naive(y,z))
@@ -130,7 +136,7 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         num_of_estimators = 5
 
         alg_names = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
-        #alg_names = ['PI($p$)', 'newname' ,'LS-Prop', 'LS-Num','DM', 'DM($0.75$)'] #TODO
+        #alg_names = ['PI($p$)', 'newname' ,'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
         for i in range(T):
             selected = select_clusters_complete(nc, K) # select clusters 
@@ -165,3 +171,59 @@ def SBM(n, k, Pii, Pij):
     A = nx.adjacency_matrix(nx.stochastic_block_model(sizes, probs))
     #blocks = nx.get_node_attributes(G, "block")
     return G, A
+
+
+def color_nodes(n, K):
+    '''
+    Returns random colors for each of the K communities in a SBM
+
+    # https://stackoverflow.com/questions/28999287/generate-random-colors-rgb
+    int n = number of nodes
+    int K = number of communities (assumed to be of equal size, with n divisible  by K)
+    '''
+    number_of_colors = K
+    color = ["#"+''.join([random.choice('0123456789ABCDEF') for j in range(6)]) for i in range(number_of_colors)]
+    rep = int(n/K)
+    res = np.repeat(color, rep)
+    return res
+        
+def plot_degrees(G, Pii, Pij):
+    '''
+    Saves a degree histogram for a networkx SBM. 
+
+    G (networkx graph object): the SBM
+    Pii (float): probability of edge between two nodes of the same community
+    Pij (float): probabiility of an edge between two nodes of different communities
+    '''
+    degree_sequence = sorted((d for n, d in G.degree()), reverse=True)
+    fig, ax2 = plt.subplots()
+    ax2.bar(*np.unique(degree_sequence, return_counts=True))
+    ax2.set_title("Degree histogram")
+    ax2.set_xlabel("Degree")
+    ax2.set_ylabel("# of Nodes")
+
+    fig.tight_layout()
+    Pin = str(Pii).replace('.','')
+    Pout = str(Pij).replace('.','')
+    plt.savefig('testing-graphs/degrees/degrees-' + 'Pin' + Pin + '-Pout' + Pout + '.png')
+    plt.close()
+
+def draw_SBM(n, K, G, Pii, Pij):
+    '''
+    Saves a drawing of a networkx SBM.
+
+    n (int): number of nodes
+    K (int): number of communities
+    G (networkx graph object): SBM
+    Pii (float): probability of edge between two nodes of the same community
+    Pij (float): probabiility of an edge between two nodes of different communities
+    '''
+    fig2, ax1 = plt.subplots()
+    colors = color_nodes(n,K)
+    nx.draw_networkx(G, ax=ax1, with_labels=False, node_size=10, node_color=colors,width=0.4)
+    ax1.set_title("SBM with $P_{{{}}}={}$ and $P_{{{}}}={}$".format('in', Pii, 'out', Pij))
+    fig2.tight_layout()
+    Pin = str(Pii).replace('.','')
+    Pout = str(Pij).replace('.','')
+    plt.savefig('testing-graphs/structure/structure-' + 'Pin' + Pin + '-Pout' + Pout + '.png')
+    pass
