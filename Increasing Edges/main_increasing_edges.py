@@ -92,8 +92,8 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         K = int(np.floor(q*nc))
 
     p = B/q
-    num_units_in_cluster = n/nc
-    edges_out_over_in = (Pii*(K-1)*num_units_in_cluster) / (Pii*num_units_in_cluster) # ratio of expected number of edges within cluster : outside cluster for each unit
+    unitsPercluster = n/nc
+    edges_out_over_in = (Pij*(K-1)*unitsPercluster) / (Pii*K*unitsPercluster) # ratio of expected number of edges within cluster : outside cluster for each unit
     dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'K': K, 'p': p, 'q': q, 'B': B, 'ratio': r, 'out-in': edges_out_over_in}
 
     G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
