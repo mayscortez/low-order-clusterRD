@@ -8,7 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import time
-from myFunctions import *
+from myFunctions_edges import *
 
 def main(beta, graphNum, T):
     deg_str = '_deg' + str(beta)  # naming convention
@@ -58,8 +58,10 @@ def main(beta, graphNum, T):
         print('Runtime (in seconds) for (p_in,p_out) = ({},{}) step: {}'.format(p_in, p_out,executionTime))
 
     executionTime = (time.time() - startTime1)
+    print('Degree: {}'.format(beta)) 
     print('Total runtime in minutes: {}'.format(executionTime/60),file=f)   
-    print('Total runtime in minutes: {}'.format(executionTime/60))        
+    print('Total runtime in minutes: {}'.format(executionTime/60))     
+    print('')    
     df = pd.DataFrame.from_records(results)
     df.to_csv(save_path + graphStr + fixed + '_incrEdges-full-data'+deg_str +'.csv')
     
@@ -126,16 +128,16 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         H = bern_coeffs(P)                  # coefficients for the polynomial interpolation estimator
 
         ####### Estimate ########
-        #TODO: Add estimator that only looks at U
         estimators = []
-        estimators.append(lambda y,z,sums,H_m: graph_agnostic(n,sums,H_m)/q)
-        estimators.append(lambda y,z, sums, H_m: poly_regression_prop(beta, y,A,z))
-        estimators.append(lambda y,z, sums, H_m: poly_regression_num(beta, y,A,z))
-        estimators.append(lambda y,z,sums,H_m: diff_in_means_naive(y,z))
-        estimators.append(lambda y,z,sums,H_m: diff_in_means_fraction(n,y,A,z,0.75))
+        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
+        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q*p,sums_U,H_m))    # estimator only looking at [U]
+        estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
+        estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
+        estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
+        estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
         num_of_estimators = 5
 
-        alg_names = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+        alg_names = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
         #alg_names = ['PI($p$)', 'newname' ,'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
         for i in range(T):
@@ -145,14 +147,13 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
 
             dict_base.update({'rep': i})
 
-            #TODO: compute these for just the selected nodes as well
             Z = staggered_rollout_bern(n, selected_nodes, P, boundary_of_selected, P_prime)
             z = Z[beta,:]
             y = fy(z)
-            sums = outcome_sums(fy, Z)
+            sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
             for x in range(num_of_estimators):
-                est = estimators[x](y,z,sums,H) # have it include both the parameters for all as well as just U
+                est = estimators[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
                 dict_base.update({'Estimator': alg_names[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
 

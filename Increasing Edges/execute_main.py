@@ -6,7 +6,7 @@ path = os.getcwd()
 print("Path = {}".format(path))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-beta = [1,2,3]
+beta = [1,2,3,4]
 graphNum = 50     
 T = 50
 for b in beta:

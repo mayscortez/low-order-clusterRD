@@ -33,15 +33,17 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     save_path = 'plots/' + 'deg' + str(beta) + '/'
     deg_str = '_deg' + str(beta)
     
-    #estimators = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
-    estimators = ['PI($p$)']
+    #estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    #estimators = ['PI-$n$($p$)'] 
+    #estimators = ['PI-$\mathcal{U}$($p$)'] 
+    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)'] 
+    estimators_str = '_nU' # other options: 'n', 'U', 'all' -- basically, which estimators show up in the plots
 
     experiment = x_label
-    print(experiment+deg_str+'_'+x_var)
+    print(experiment+deg_str+'_'+x_var+estimators_str)
 
     # Create and save plots
     df = pd.read_csv(load_path+graph+experiment+'-full-data' + deg_str+ '.csv')
-    #df = df.assign(Estimator = lambda df: df.Estimator.replace({'PI':'PI($p$)', 'DM(0.75)':'DM($0.75$)'}))
 
     plt.rc('text', usetex=True)
     
@@ -51,20 +53,18 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     newData = df.loc[df['Estimator'].isin(estimators)]
 
     sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', data=newData, errorbar='sd', legend='brief', markers=True)
-    #sns.lineplot(x=x_var, y='Bias', data=df, errorbar='sd', legend='brief', markers=True)
 
     #ax.set_xlim(0,0.001)
     ax.set_xlabel(x_plot, fontsize = 18)
     #ax.set_ylim(-0.75,0.75)
     ax.set_ylabel("Relative Bias", fontsize = 18)
     ax.set_title(title, fontsize=18)
-    #plt.xticks([0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01])
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
     plt.grid()
 
     plt.tight_layout()
-    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+'.pdf')
+    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.pdf')
     plt.close()
 
     #TODO: Create and save MSE plots
