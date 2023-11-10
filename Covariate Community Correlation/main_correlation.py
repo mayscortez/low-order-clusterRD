@@ -18,16 +18,17 @@ def main(beta, graphNum, T):
     graphStr = "SBM"    # stochastic block model    
     n = 1000            # number of nodes
     nc = 50             # number of communities
-    p_in = 10/(n/nc)     # edge probability within communities
-    p_out = 0             # edge probability between different communities
+    p_in = 10/(n/nc)    # edge probability within communities
+    p_out = 0           # edge probability between different communities
 
-    K = int(nc/2)           # number of clusters to be in experiment if choosing via complete RD
-    #q = K/nc            # fraction of clusters to be part of the experiment if choosing via Bernoulli RD
-    B = 0.5            # original treatment budget
-    p_prime = 0        # fraction of the boundary of U to get treated as well
-    RD = "complete"    # either "complete" or "bernoulli" depending on the design used for selecting clusters
+    B = 0.25            # original treatment budget
+    p = 0.25             # "new" treatment probability
+    K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
+    q = K/nc
+    p_prime = 0         # fraction of the boundary of U to get treated as well
+    RD = "complete"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') # naming convention
     
     f = open(save_path + experiment + fixed + deg_str + '.txt', 'w') # e.g filename could be correlation_n1000_nc50_in005_out0_deg2.txt  
     
@@ -52,8 +53,10 @@ def main(beta, graphNum, T):
         print('Runtime (in seconds) for phi = {} step: {}'.format(phi, p_out,executionTime))
 
     executionTime = (time.time() - startTime1)
+    print('Degree: {}'.format(beta)) 
     print('Total runtime in minutes: {}'.format(executionTime/60),file=f)   
-    print('Total runtime in minutes: {}'.format(executionTime/60))        
+    print('Total runtime in minutes: {}'.format(executionTime/60)) 
+    print('')       
     df = pd.DataFrame.from_records(results)
     df.to_csv(save_path + graphStr + fixed + '_' + experiment + '-full-data'+deg_str +'.csv')
     
@@ -118,15 +121,17 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         H = bern_coeffs(P)                  # coefficients for the polynomial interpolation estimator
 
         ####### Estimate ########
-        estimators = []
-        estimators.append(lambda y,z,sums,H_m: graph_agnostic(n,sums,H_m)/q)
-        estimators.append(lambda y,z, sums, H_m: poly_regression_prop(beta,y,A,z))
-        estimators.append(lambda y,z, sums, H_m: poly_regression_num(beta, y,A,z))
-        estimators.append(lambda y,z,sums,H_m: diff_in_means_naive(y,z))
-        estimators.append(lambda y,z,sums,H_m: diff_in_means_fraction(n,y,A,z,0.75))
-        num_of_estimators = 5
 
-        alg_names = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+        estimators = []
+        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
+        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))            # estimator only looking at [U]
+        estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
+        estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
+        estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
+        estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
+        num_of_estimators = 6
+
+        alg_names = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
         for i in range(T):
             selected = select_clusters_complete(nc, K) # select clusters 
@@ -137,10 +142,10 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
             Z = staggered_rollout_bern(n, selected_nodes, P, [], P_prime)
             z = Z[beta,:]
             y = fy(z)
-            sums = outcome_sums(fy, Z)
+            sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
             for x in range(num_of_estimators):
-                est = estimators[x](y,z,sums,H) # have it include both the parameters for all as well as just U
+                est = estimators[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
                 dict_base.update({'Estimator': alg_names[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
 

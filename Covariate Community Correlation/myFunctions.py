@@ -459,18 +459,21 @@ def seq_treatment_probs(beta, p):
   P = np.fromfunction(fun, shape=(beta+1,))
   return P
 
-def outcome_sums(Y, Z):
+def outcome_sums(Y, Z, selected):
   '''
   Returns the sums of the outcomes Y(z_t) for each timestep t
 
   Y (function): potential outcomes model
   Z (numpy array): treatment vectors z_t for each timestep t
    - each row should correspond to a timestep, i.e. Z should be beta+1 by n
+  selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
   '''
-  sums = np.zeros(Z.shape[0]) 
+  sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0])  
   for t in range(Z.shape[0]):
-    sums[t] = np.sum(Y(Z[t,:]))
-  return sums
+    outcomes = Y(Z[t,:])
+    sums[t] = np.sum(outcomes)
+    sums_U[t] = np.sum(outcomes[selected])
+  return sums, sums_U
 
 def graph_agnostic(n, sums, H):
     '''

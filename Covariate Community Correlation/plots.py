@@ -10,20 +10,22 @@ def main():
     graph = "SBM" 
     n = 1000
     nc = 50
-    K = int(nc/2)
-    B = 0.5
-    q_or_K_st = '_K' + str(K)
+    B = 0.25
+    Bstr = str(B).replace('.','')
     p_in = 10/(n/nc) 
     p_out = 0
+    p = .25 
+    K = int(np.floor(B * nc / p))
+    q_or_K_st = '_K' + str(K)
     experiment = 'correlation'
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') # naming convention
     x_label = [fixed + '_' + experiment]
     x_var = ['Phi']
     x_plot = ['$\phi$']
     beta = [1,2,3]
     for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, E[d_i]=10, in={}, out={}$'.format(b, n, nc, p_in, p_out)]
+        title = ['$\\beta={}, n={}, n_c={}, E[d_i]=10, p={}$'.format(b, n, nc, p)]
         for ind in range(len(x_var)):
             plot(graph,x_var[ind],x_label[ind],b,x_plot[ind],title[ind],b)
 
@@ -33,15 +35,17 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     save_path = 'plots/' + 'deg' + str(beta) + '/'
     deg_str = '_deg' + str(beta)
     
-    #estimators = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
-    estimators = ['PI($p$)']
+    #estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    #estimators = ['PI-$n$($p$)'] 
+    #estimators = ['PI-$\mathcal{U}$($p$)'] 
+    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)'] 
+    estimators_str = '_nU' # other options: 'n', 'U', 'all' -- basically, which estimators show up in the plots
 
     experiment = x_label
-    print(experiment+deg_str+'_'+x_var)
+    print(experiment+deg_str+'_'+x_var+estimators_str)
 
     # Create and save plots
     df = pd.read_csv(load_path+graph+experiment+'-full-data' + deg_str+ '.csv')
-    #df = df.assign(Estimator = lambda df: df.Estimator.replace({'PI':'PI($p$)', 'DM(0.75)':'DM($0.75$)'}))
 
     plt.rc('text', usetex=True)
     
@@ -64,7 +68,7 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     plt.grid()
 
     plt.tight_layout()
-    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+'.pdf')
+    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.pdf')
     plt.close()
 
     #TODO: Create and save MSE plots
