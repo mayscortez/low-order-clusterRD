@@ -13,9 +13,9 @@ def main():
     p_in = 10/(n/nc) 
     p_out = 0
 
-    B = 0.2
+    B = 0.25
     Bstr = str(B).replace('.','')
-    p = 1 
+    p = 0.25 
     pstr = str(p).replace('.','')
     K = int(np.floor(B * nc / p))
     q_or_K_st = '_K' + str(K)
@@ -49,13 +49,13 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
 
     # Create and save plots
     df = pd.read_csv(load_path+graph+experiment+'-full-data' + deg_str+ '.csv')
+    newData = df.loc[df['Estimator'].isin(estimators)]
 
     plt.rc('text', usetex=True)
     
     # Plot with all the estimators
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    newData = df.loc[df['Estimator'].isin(estimators)]
 
     sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', data=newData, errorbar='sd', legend='brief', markers=True)
 

@@ -21,14 +21,14 @@ def main(beta, graphNum, T):
     p_in = 10/(n/nc)    # edge probability within communities
     p_out = 0           # edge probability between different communities
 
-    B = 0.25            # original treatment budget
-    p = 0.25             # "new" treatment probability
+    B = 0.2            # original treatment budget
+    p = 1             # "new" treatment probability
     K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
     q = K/nc
     p_prime = 0         # fraction of the boundary of U to get treated as well
     RD = "complete"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') + '_B' + str(B).replace('.','') # naming convention
     
     f = open(save_path + experiment + fixed + deg_str + '.txt', 'w') # e.g filename could be correlation_n1000_nc50_in005_out0_deg2.txt  
     
