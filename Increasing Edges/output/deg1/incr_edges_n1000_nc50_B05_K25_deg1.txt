@@ -1,8 +1,8 @@
-Runtime (in seconds) for (p_in,p_out) = (0.5,0.0) step: 4.015884876251221
-Runtime (in seconds) for (p_in,p_out) = (0.45,0.00102) step: 4.06341290473938
-Runtime (in seconds) for (p_in,p_out) = (0.4,0.00204) step: 3.9038820266723633
-Runtime (in seconds) for (p_in,p_out) = (0.35,0.00306) step: 3.8888330459594727
-Runtime (in seconds) for (p_in,p_out) = (0.3,0.00408) step: 3.8599629402160645
-Runtime (in seconds) for (p_in,p_out) = (0.25,0.0051) step: 3.876432180404663
-Runtime (in seconds) for (p_in,p_out) = (0.2,0.00612) step: 3.880445957183838
-Total runtime in minutes: 0.45815326770146686
+Runtime (in seconds) for (p_in,p_out) = (0.5,0.0) step: 4.028255939483643
+Runtime (in seconds) for (p_in,p_out) = (0.45,0.00102) step: 4.188169002532959
+Runtime (in seconds) for (p_in,p_out) = (0.4,0.00204) step: 4.057983875274658
+Runtime (in seconds) for (p_in,p_out) = (0.35,0.00306) step: 4.10213303565979
+Runtime (in seconds) for (p_in,p_out) = (0.3,0.00408) step: 4.021322011947632
+Runtime (in seconds) for (p_in,p_out) = (0.25,0.0051) step: 4.033077001571655
+Runtime (in seconds) for (p_in,p_out) = (0.2,0.00612) step: 4.017557859420776
+Total runtime in minutes: 0.4741474509239197
