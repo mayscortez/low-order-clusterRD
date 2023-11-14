@@ -6,26 +6,29 @@ import numpy as np
 import seaborn as sns
 import os
 
-def main():
-    graph = "SBM" 
+def main(): 
+    graph = "SBM"
     n = 1000
     nc = 50
-    B = 0.25
-    Bstr = str(B).replace('.','')
     p_in = 10/(n/nc) 
     p_out = 0
-    p = .25 
+
+    B = 0.2
+    Bstr = str(B).replace('.','')
+    p = 1 
+    pstr = str(p).replace('.','')
     K = int(np.floor(B * nc / p))
     q_or_K_st = '_K' + str(K)
+    
     experiment = 'correlation'
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + pstr + '_B' + Bstr # naming convention
     x_label = [fixed + '_' + experiment]
     x_var = ['Phi']
     x_plot = ['$\phi$']
     beta = [1,2,3]
     for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, E[d_i]=10, p={}$'.format(b, n, nc, p)]
+        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, p)]
         for ind in range(len(x_var)):
             plot(graph,x_var[ind],x_label[ind],b,x_plot[ind],title[ind],b)
 
@@ -55,24 +58,35 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     newData = df.loc[df['Estimator'].isin(estimators)]
 
     sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', data=newData, errorbar='sd', legend='brief', markers=True)
-    #sns.lineplot(x=x_var, y='Bias', data=df, errorbar='sd', legend='brief', markers=True)
 
     #ax.set_xlim(0,0.001)
     ax.set_xlabel(x_plot, fontsize = 18)
     #ax.set_ylim(-0.75,0.75)
     ax.set_ylabel("Relative Bias", fontsize = 18)
     ax.set_title(title, fontsize=18)
-    #plt.xticks([0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001, 0.005, 0.01])
     handles, labels = ax.get_legend_handles_labels()
     ax.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
     plt.grid()
-
     plt.tight_layout()
+
     plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.pdf')
     plt.close()
 
-    #TODO: Create and save MSE plots
+    # Create and save MSE plots
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111)
+    sns.lineplot(x=x_var, y='Bias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
 
+    ax2.set_xlabel(x_plot, fontsize = 18)
+    ax2.set_ylabel("MSE", fontsize = 18)
+    ax2.set_title(title, fontsize=20)
+    handles, labels = ax2.get_legend_handles_labels()
+    ax2.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+    plt.grid()
+    plt.tight_layout()
+
+    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'_MSE.pdf')
+    plt.close()
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
