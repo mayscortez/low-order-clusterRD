@@ -46,19 +46,6 @@ def ppom(beta, C, alpha):
 
 bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
-def lattice2Dsq(x,y=1):
-    '''
-    Returns adjacency matrix of an x by y lattice graph on x*y nodes as a sparse matrix
-    
-    x (int): number of nodes in the x direction
-    y (int): number of nodes in the y direction
-    '''
-    G = nx.grid_graph(dim=(x,y))
-    G = nx.DiGraph(G)
-    A = nx.to_scipy_sparse_array(G)
-    A.setdiag(np.ones(x*y))
-    return A 
-
 def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
     Returns weights generated from simpler model
@@ -79,6 +66,29 @@ def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.
     col_sum[col_sum==0] = 1
     temp = scipy.sparse.diags(C_offdiag/col_sum)
     C = C.dot(temp)
+
+    if rand_diag.size == 0:
+        rand_diag = np.random.rand(n)
+    C_diag = diag*rand_diag
+    C.setdiag(C_diag)
+
+    return C
+
+def simpler_weights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
+    '''
+    Returns weights generated from simpler model
+
+    A (numpy array): adjacency matrix of the network
+    diag (float): maximum norm of direct effects
+    offidiag (float): maximum norm of the indirect effects
+    '''
+    n = A.shape[0]
+
+    if rand_offdiag.size == 0:
+        rand_offdiag = np.random.rand(n)
+    C_offdiag = offdiag*rand_offdiag
+
+    C = A * C_offdiag
 
     if rand_diag.size == 0:
         rand_diag = np.random.rand(n)
@@ -400,9 +410,29 @@ def zU_to_z(z_U, U, z_U_prime, Uprime, n):
 
     return z
 
-def staggered_rollout_bern(n, selected, P, bndry, P_prime):
+def staggered_rollout_bern(n, P):
   '''
   Returns Treatment Samples from Bernoulli Staggered Rollout
+
+  beta (int): degree of potential outcomes model
+  n (int): size of population
+  P (numpy array): treatment probabilities for each time step
+  '''
+
+  ### Initialize ###
+  Z = np.zeros(shape=(P.size,n))   # for each treatment sample z_t
+  U = np.random.rand(n)
+
+  ### staggered rollout experiment ###
+  for t in range(P.size):
+    ## sample treatment vector ##
+    Z[t,:] = (U < P[t])+0
+
+  return Z
+
+def staggered_rollout_bern_clusters(n, selected, P, bndry, P_prime):
+  '''
+  Returns Treatment Samples from Bernoulli Staggered Rollout with clustering
 
   n (int): size of population
   selected (list): list of the nodes who were selected to be in the staggered rollout experiment
@@ -459,6 +489,7 @@ def seq_treatment_probs(beta, p):
   P = np.fromfunction(fun, shape=(beta+1,))
   return P
 
+"""
 def outcome_sums(Y, Z, selected):
   '''
   Returns the sums of the outcomes Y(z_t) for each timestep t
@@ -474,6 +505,30 @@ def outcome_sums(Y, Z, selected):
     sums[t] = np.sum(outcomes)
     sums_U[t] = np.sum(outcomes[selected])
   return sums, sums_U
+"""
+
+def outcome_sums(Y, Z, selected):
+  '''
+  Returns the sums of the outcomes Y(z_t) for each timestep t
+
+  Y (function): potential outcomes model
+  Z (numpy array): treatment vectors z_t for each timestep t
+   - each row should correspond to a timestep, i.e. Z should be beta+1 by n
+  selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
+  '''
+  if selected:
+    sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0])  
+    for t in range(Z.shape[0]):
+        outcomes = Y(Z[t,:])
+        sums[t] = np.sum(outcomes)
+        sums_U[t] = np.sum(outcomes[selected])
+    return sums, sums_U
+  else:
+     sums = np.zeros(Z.shape[0])
+     for t in range(Z.shape[0]):
+        outcomes = Y(Z[t,:])
+        sums[t] = np.sum(outcomes)
+     return sums
 
 def graph_agnostic(n, sums, H):
     '''
