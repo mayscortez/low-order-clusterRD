@@ -19,9 +19,9 @@ def main(beta, graphNum, T):
     nc = 50             # number of communities
     Pii = 10/(n/nc)     # edge probability within communities
 
-    K = int(nc/2)           # number of clusters to be in experiment if choosing via complete RD
-    q = 0.5            # fraction of clusters to be part of the experiment if choosing via Bernoulli RD
-    B = 0.5            # original treatment budget
+    q = 0.50            # fraction of clusters to be part of the experiment if choosing via Bernoulli RD
+    B = 0.25            # original treatment budget
+    K = int(np.floor(q*nc)) # number of clusters to be in experiment if choosing via complete RD
     p_prime = 0        # fraction of the boundary of U to get treated as well
     RD = "complete"    # either "complete" or "bernoulli" depending on the design used for selecting clusters
     
@@ -44,7 +44,7 @@ def main(beta, graphNum, T):
     
     results = []
     #Pij = np.array([0, 0.00001, 0.00005, 0.0001, 0.0005, 0.001]) #0.005, 0.01])
-    p_ins = [0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2] # np.linspace(Pii,Pii/2,6)
+    p_ins = [0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.01] # np.linspace(Pii,Pii/2,6)
     for p_in in p_ins:
         p_out = (0.5-p_in)/49
         p_out = np.around(p_out, 5)
@@ -130,12 +130,12 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         ####### Estimate ########
         estimators = []
         estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
-        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q*p,sums_U,H_m))    # estimator only looking at [U]
+        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))    # estimator only looking at [U]
         estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
         estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
         estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
         estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
-        num_of_estimators = 5
+        num_of_estimators = 6
 
         alg_names = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
         #alg_names = ['PI($p$)', 'newname' ,'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
@@ -143,11 +143,10 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, design, q_or_K, p_prime, g
         for i in range(T):
             selected = select_clusters_complete(nc, K) # select clusters 
             selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
-            boundary_of_selected = [] #TODO get boundary
 
             dict_base.update({'rep': i})
 
-            Z = staggered_rollout_bern(n, selected_nodes, P, boundary_of_selected, P_prime)
+            Z = staggered_rollout_bern(n, selected_nodes, P, [], P_prime)
             z = Z[beta,:]
             y = fy(z)
             sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
