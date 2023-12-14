@@ -1,5 +1,6 @@
 from matplotlib import rcParams
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 import os
@@ -8,8 +9,9 @@ def main():
     graph = "SBM" 
     n = 1000
     nc = 50
-    K = int(nc/2)
-    B = 0.5
+    q = 0.5 
+    B = 0.25
+    K = int(np.floor(q*nc))
     q_or_K_st = '_K' + str(K)
     Pii = 10/(n/nc) 
     
@@ -44,13 +46,13 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
 
     # Create and save plots
     df = pd.read_csv(load_path+graph+experiment+'-full-data' + deg_str+ '.csv')
+    newData = df.loc[df['Estimator'].isin(estimators)]
 
     plt.rc('text', usetex=True)
-    
+
     # Plot with all the estimators
     fig = plt.figure()
     ax = fig.add_subplot(111)
-    newData = df.loc[df['Estimator'].isin(estimators)]
 
     sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', data=newData, errorbar='sd', legend='brief', markers=True)
 
@@ -67,7 +69,22 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.pdf')
     plt.close()
 
-    #TODO: Create and save MSE plots
+    #Create and save MSE plots
+    fig2 = plt.figure()
+    ax2 = fig2.add_subplot(111)
+    newData['RelBias_sq'] = df['Bias']**2
+    sns.lineplot(x=x_var, y='RelBias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
+
+    ax2.set_xlabel(x_plot, fontsize = 18)
+    ax2.set_ylabel("MSE", fontsize = 18)
+    ax2.set_title(title, fontsize=20)
+    handles, labels = ax2.get_legend_handles_labels()
+    ax2.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+    plt.grid()
+    plt.tight_layout()
+
+    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'_MSE.pdf')
+    plt.close()
 
 
 if __name__ == "__main__":
