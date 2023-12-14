@@ -5,18 +5,17 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
+pd.options.mode.chained_assignment = None  # default='warn'
 
-def main(): 
+def main(B=0.25, p=0.25): 
     graph = "SBM"
     n = 1000
     nc = 50
     p_in = 10/(n/nc) 
     p_out = 0
 
-    B = 0.25
     Bstr = str(B).replace('.','')
-    p = 0.25 
-    pstr = str(p).replace('.','')
+    pstr = str(np.round(p,3)).replace('.','')
     K = int(np.floor(B * nc / p))
     q_or_K_st = '_K' + str(K)
     
@@ -26,9 +25,9 @@ def main():
     x_label = [fixed + '_' + experiment]
     x_var = ['Phi']
     x_plot = ['$\phi$']
-    beta = [1,2,3]
+    beta = [2]
     for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, p)]
+        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3))]
         for ind in range(len(x_var)):
             plot(graph,x_var[ind],x_label[ind],b,x_plot[ind],title[ind],b)
 
@@ -69,13 +68,14 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     plt.grid()
     plt.tight_layout()
 
-    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.pdf')
+    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.png')
     plt.close()
 
     # Create and save MSE plots
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111)
-    sns.lineplot(x=x_var, y='Bias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
+    newData['RelBias_sq'] = df['Bias']**2
+    sns.lineplot(x=x_var, y='RelBias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
 
     ax2.set_xlabel(x_plot, fontsize = 18)
     ax2.set_ylabel("MSE", fontsize = 18)
@@ -85,9 +85,13 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     plt.grid()
     plt.tight_layout()
 
-    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'_MSE.pdf')
+    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'_MSE.png')
     plt.close()
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    main()
+    B = 0.5
+    #probs = [1, 5/7, 0.5, 0.3, 0.25, 0.2, 5/35, 0.1]
+    probs = [1, 25/30, 25/35, 0.625, 25/45, 0.5]
+    for p in probs:
+        main(B, p)
