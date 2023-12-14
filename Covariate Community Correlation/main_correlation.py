@@ -9,8 +9,16 @@ import matplotlib.pyplot as plt
 import random
 import time
 from myFunctions import *
+from myFunctions import staggered_rollout_bern_clusters
 
-def main(beta, graphNum, T):
+def main(beta, graphNum, T, B=0.2, p=1):
+    '''
+    beta = degree of the model
+    graphNum = how many graph models to average over
+    T = how many times to sample treatment vector per model
+    B = treatment budget (marginal treatment probability)
+    p = treatment probability if cluster is chosen (treatment prob conditioned on being in U)
+    '''
     deg_str = '_deg' + str(beta)  # naming convention
     save_path = 'output/' + 'deg' + str(beta) + '/'
     experiment = 'correlation'                    
@@ -21,18 +29,17 @@ def main(beta, graphNum, T):
     p_in = 10/(n/nc)    # edge probability within communities
     p_out = 0           # edge probability between different communities
 
-    B = 0.2            # original treatment budget
-    p = 1             # "new" treatment probability
     K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
     q = K/nc
     p_prime = 0         # fraction of the boundary of U to get treated as well
-    RD = "complete"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
+    cluster_selection_RD = "complete"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') + '_B' + str(B).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(np.round(p,3)).replace('.','') + '_B' + str(B).replace('.','') # naming convention
     
-    f = open(save_path + experiment + fixed + deg_str + '.txt', 'w') # e.g filename could be correlation_n1000_nc50_in005_out0_deg2.txt  
+    f = open(save_path + experiment + fixed + deg_str + '.txt', 'w') # e.g filename could be correlation_n1000_nc50_in005_out0_p1_B01_deg2.txt 
     
     startTime1 = time.time()
+
     #################################################################
     # Run Experiment: Increasing the correlation between covariates
     #################################################################
@@ -40,13 +47,13 @@ def main(beta, graphNum, T):
     r = 1.25        # ratio between indirect and direct effects
     
     results = []
-    phis = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5]
+    phis = [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5] 
 
     for phi in phis:
         print("phi = {}".format(phi))
         startTime2 = time.time()
 
-        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, phi, RD, K, graphNum, T, graphStr))
+        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, phi, cluster_selection_RD, K, graphNum, T, graphStr))
 
         executionTime = (time.time() - startTime2)
         print('Runtime (in seconds) for phi = {} step: {}'.format(phi, p_out,executionTime),file=f)
@@ -61,18 +68,18 @@ def main(beta, graphNum, T):
     df.to_csv(save_path + graphStr + fixed + '_' + experiment + '-full-data'+deg_str +'.csv')
     
 
-
 def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graphNum, T, graphStr):
     '''
+    beta = degree of the model / polynomial
     n = population size
     nc = number of clusters
     B = original treatment budget/fraction
-    r = ratio offdiag/diag (indirect effect)/(direct effects)
-    diag = maxium norm of the direct effects
+    r = ratio offdiag/diag: (indirect effect)/(direct effects)
+    diag = maxium norm of the direct effects before covariate type scaling
     Pii = edge probability within communities
-    Pij = edge prob between communities
-    phi = correlation btw community and effect type (probability between 0 and 0.5)
-    design = either "complete" or "bernoulli" depending on which design is being used for selecting clusters
+    Pij = edge prob btwn different communities
+    phi = correlation btwn community & effect type (probability between 0 and 0.5)
+    design = design being used for selecting clusters, either "complete" or "bernoulli"
     q_or_K = if using complete RD for selecting cluster, this will be the value of K; if using Bernoulli design, this will be the value q
     p_prime = the budget on the boundary of U
     graphNum = number of graphs to average over
@@ -116,37 +123,66 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         # compute the true TTE
         TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))
         
-        P = seq_treatment_probs(beta, p)    # treatment probabilities for each step of the staggered rollout
-        P_prime = seq_treatment_probs(beta, 0)    # treatment probabilities for each step of the staggered rollout
-        H = bern_coeffs(P)                  # coefficients for the polynomial interpolation estimator
-
         ####### Estimate ########
 
-        estimators = []
-        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
-        estimators.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))            # estimator only looking at [U]
-        estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
-        estimators.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
-        estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
-        estimators.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
-        num_of_estimators = 6
+        # Cluster Randomized Design Estimators
+        estimators_clusterRD = []
+        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
+        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))           # estimator only looking at [U]
+        estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
+        estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
+        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
+        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
+        # TODO: Add HT and Hajek estimators
 
-        alg_names = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+        alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+
+        # Bernoulli Randomized Design Estimators
+        estimators_bernRD = []
+        estimators_bernRD.append(lambda y,z,sums,H_m: graph_agnostic(n,sums,H_m))
+        estimators_bernRD.append(lambda y,z, sums, H_m: poly_regression_prop(beta, y,A,z))      # polynomial regression
+        estimators_bernRD.append(lambda y,z, sums, H_m: poly_regression_num(beta, y,A,z))
+        estimators_bernRD.append(lambda y,z,sums,H_m: diff_in_means_naive(y,z))                 # difference in means 
+        estimators_bernRD.append(lambda y,z,sums,H_m: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
+
+        alg_names_bernRD = ['PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+
+        # parameters for the staggered rollout - Cluster Randomized Design
+        P = seq_treatment_probs(beta, p)        # treatment probabilities for each step of the staggered rollout on U
+        P_prime = seq_treatment_probs(beta, 0)  # treatment probabilities for each step of the staggered rollout on the boundary of U
+        H = bern_coeffs(P)                      # coefficients for the polynomial interpolation estimator
+
+        # parameters for the staggered rollout - Bernoulli Randomized Design
+        P_bernRD = seq_treatment_probs(beta, B) # treatment probabilities for each step of the staggered rollout on [n]
+        H_bern = bern_coeffs(P_bernRD)          # coefficients for the polynomial interpolation estimator
 
         for i in range(T):
             selected = select_clusters_complete(nc, K) # select clusters 
             selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
 
-            dict_base.update({'rep': i})
+            dict_base.update({'rep': i, 'design': 'Cluster'})
 
-            Z = staggered_rollout_bern(n, selected_nodes, P, [], P_prime)
+            # Cluster Randomized Design
+            Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
             z = Z[beta,:]
             y = fy(z)
             sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
-            for x in range(num_of_estimators):
-                est = estimators[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
-                dict_base.update({'Estimator': alg_names[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Bias_sq': ((est-TTE)**2)})
+            for x in range(len(estimators_clusterRD)):
+                est = estimators_clusterRD[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
+                dict_base.update({'Estimator': alg_names_clusterRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
+                results.append(dict_base.copy())
+
+            # Bernoulli Randomized Design (No Clusters)
+            dict_base.update({'design': 'Bernoulli'})
+            Z_bern = staggered_rollout_bern(n, P_bernRD)
+            z_bern = Z_bern[beta,:]
+            y_bern = fy(z)
+            sums_bern = outcome_sums(fy, Z_bern, [])
+
+            for x in range(len(estimators_bernRD)):
+                est = estimators_bernRD[x](y_bern,z_bern,sums_bern,H_bern) # have it include both the parameters for all as well as just U
+                dict_base.update({'Estimator': alg_names_bernRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
 
     return results
