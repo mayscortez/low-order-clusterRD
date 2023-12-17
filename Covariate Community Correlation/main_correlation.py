@@ -11,12 +11,12 @@ import time
 from myFunctions import *
 from myFunctions import staggered_rollout_bern_clusters
 
-def main(beta, graphNum, T, B=0.2, p=1):
+def main(beta, graphNum, T, B=0.06, p=1):
     '''
     beta = degree of the model
     graphNum = how many graph models to average over
     T = how many times to sample treatment vector per model
-    B = treatment budget (marginal treatment probability)
+    B = treatment budgets (marginal treatment probability)
     p = treatment probability if cluster is chosen (treatment prob conditioned on being in U)
     '''
     deg_str = '_deg' + str(beta)  # naming convention
@@ -30,14 +30,11 @@ def main(beta, graphNum, T, B=0.2, p=1):
     p_out = 0           # edge probability between different communities
 
     K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
-    q = K/nc
-    p_prime = 0         # fraction of the boundary of U to get treated as well
-    cluster_selection_RD = "complete"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
+    cluster_selection_RD = "bernoulli"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
     
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(np.round(p,3)).replace('.','') + '_B' + str(B).replace('.','') # naming convention
     
     f = open(save_path + experiment + fixed + deg_str + '.txt', 'w') # e.g filename could be correlation_n1000_nc50_in005_out0_p1_B01_deg2.txt 
-    
     startTime1 = time.time()
 
     #################################################################
@@ -53,11 +50,11 @@ def main(beta, graphNum, T, B=0.2, p=1):
         print("phi = {}".format(phi))
         startTime2 = time.time()
 
-        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, phi, cluster_selection_RD, K, graphNum, T, graphStr))
+        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, phi, cluster_selection_RD, K/nc, graphNum, T, graphStr))
 
         executionTime = (time.time() - startTime2)
-        print('Runtime (in seconds) for phi = {} step: {}'.format(phi, p_out,executionTime),file=f)
-        print('Runtime (in seconds) for phi = {} step: {}'.format(phi, p_out,executionTime))
+        print('Runtime (in seconds) for phi = {} step: {}'.format(phi, executionTime),file=f)
+        print('Runtime (in seconds) for phi = {} step: {}'.format(phi, executionTime))
 
     executionTime = (time.time() - startTime1)
     print('Degree: {}'.format(beta)) 
@@ -68,7 +65,7 @@ def main(beta, graphNum, T, B=0.2, p=1):
     df.to_csv(save_path + graphStr + fixed + '_' + experiment + '-full-data'+deg_str +'.csv')
     
 
-def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graphNum, T, graphStr):
+def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graphNum, T, graphStr, p_prime=0):
     '''
     beta = degree of the model / polynomial
     n = population size
@@ -81,10 +78,10 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
     phi = correlation btwn community & effect type (probability between 0 and 0.5)
     design = design being used for selecting clusters, either "complete" or "bernoulli"
     q_or_K = if using complete RD for selecting cluster, this will be the value of K; if using Bernoulli design, this will be the value q
-    p_prime = the budget on the boundary of U
     graphNum = number of graphs to average over
     T = number of trials per graph
     graphStr = type of graph e.g. "SBM" for stochastic block model or "ER" for Erdos-Renyi
+    p_prime = the budget on the boundary of U
     '''
     
     offdiag = r*diag   # maximum norm of indirect effect
@@ -129,13 +126,14 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         estimators_clusterRD = []
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))           # estimator only looking at [U]
+        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, q, p))  
         estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
         estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
         # TODO: Add HT and Hajek estimators
 
-        alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+        alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
         # Bernoulli Randomized Design Estimators
         estimators_bernRD = []
@@ -157,7 +155,12 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         H_bern = bern_coeffs(P_bernRD)          # coefficients for the polynomial interpolation estimator
 
         for i in range(T):
-            selected = select_clusters_complete(nc, K) # select clusters 
+            # select clusters 
+            if design == "complete":
+                selected = select_clusters_complete(nc, K)
+            else:
+                selected = select_clusters_bernoulli(nc, q)
+
             selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
 
             dict_base.update({'rep': i, 'design': 'Cluster'})
