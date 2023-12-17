@@ -7,41 +7,35 @@ import seaborn as sns
 import os
 pd.options.mode.chained_assignment = None  # default='warn'
 
-def main(B=0.25, p=0.25): 
+def main(beta=1, B=0.05, p=1): 
     graph = "SBM"
     n = 1000
     nc = 50
     p_in = 10/(n/nc) 
     p_out = 0
 
-    Bstr = str(B).replace('.','')
+    Bstr = str(np.round(B,3)).replace('.','')
     pstr = str(np.round(p,3)).replace('.','')
-    K = int(np.floor(B * nc / p))
-    q_or_K_st = '_K' + str(K)
     
     experiment = 'correlation'
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + pstr + '_B' + Bstr # naming convention
-    x_label = [fixed + '_' + experiment]
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + pstr # naming convention
+    x_label = [fixed + '_B' + Bstr + '_' + experiment]
     x_var = ['Phi']
     x_plot = ['$\phi$']
-    beta = [2]
-    for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3))]
-        for ind in range(len(x_var)):
-            plot(graph,x_var[ind],x_label[ind],b,x_plot[ind],title[ind],b)
+    title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(beta, n, nc, B, np.round(p,3))]
+    for ind in range(len(x_var)):
+        plot(graph,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind])
 
-
-def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
-    load_path = 'output/' + 'deg' + str(beta) + '/'
-    save_path = 'plots/' + 'deg' + str(beta) + '/'
-    deg_str = '_deg' + str(beta)
+def plot(graph,x_var,x_label,model,x_plot,title):
+    load_path = 'output/' + 'deg' + str(model) + '/'
+    save_path = 'plots/' + 'deg' + str(model) + '/'
+    deg_str = '_deg' + str(model)
     
-    #estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
-    #estimators = ['PI-$n$($p$)'] 
-    #estimators = ['PI-$\mathcal{U}$($p$)'] 
-    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)'] 
-    estimators_str = '_nU' # other options: 'n', 'U', 'all' -- basically, which estimators show up in the plots
+    # All possible estiamtors: ['PI-$n$($p$)', 'PI-$n$($B$)', 'HT, 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    # All possible designs: ['Cluster', 'Bernoulli'] - note that this only matters for 'LS-Prop', 'LS-Num','DM', and 'DM($0.75$)'
+    estimators = ['PI-$n$($p$)', 'PI-$n$($B$)', 'PI-$\mathcal{U}$($p$)', 'HT'] 
+    estimators_str = '_nUHT' # other options: 'n', 'U', 'all' -- basically, which estimators show up in the plots
 
     experiment = x_label
     print(experiment+deg_str+'_'+x_var+estimators_str)
@@ -74,8 +68,7 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
     # Create and save MSE plots
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111)
-    newData['RelBias_sq'] = df['Bias']**2
-    sns.lineplot(x=x_var, y='RelBias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
+    sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
 
     ax2.set_xlabel(x_plot, fontsize = 18)
     ax2.set_ylabel("MSE", fontsize = 18)
@@ -90,8 +83,13 @@ def plot(graph,x_var,x_label,model,x_plot,title,beta=1):
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    B = 0.5
-    #probs = [1, 5/7, 0.5, 0.3, 0.25, 0.2, 5/35, 0.1]
-    probs = [1, 25/30, 25/35, 0.625, 25/45, 0.5]
-    for p in probs:
-        main(B, p)
+    beta = [1,2,3]
+    B = [0.06, 0.5, 0.5]
+    probs = [[0.06, 0.25, 1/3, 2/3, 1],     # K in [50, 12, 9, 6, 3]
+            [0.5, 0.625, 25/33, 25/29, 1],  # K in [50, 40, 33, 29, 25]
+            [0.5, 0.625, 25/33, 25/29, 1]]
+for b in range(len(beta)):
+    print('Plotting degree: {}'.format(b+1))
+    for p in probs[b]:
+        print()
+        main(beta[b], B[b], p)
