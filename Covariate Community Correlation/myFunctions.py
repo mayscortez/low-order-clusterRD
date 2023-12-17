@@ -3,9 +3,9 @@ import networkx as nx
 from scipy import interpolate
 import scipy.sparse
 
-# Scale down the effects of higher order terms
-a1 = 1      # for linear effects
-a2 = 1    # for quadratic effects
+# Scale the effects of higher order terms
+a1 = 1   # for linear effects
+a2 = 1   # for quadratic effects
 a3 = 1   # for cubic effects
 a4 = 1   # for quartic effects
 
@@ -48,7 +48,7 @@ bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
 def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
-    Returns weights generated from simpler model
+    Returns weights generated from simpler model (that incorporates degrees)
 
     A (numpy array): adjacency matrix of the network
     diag (float): maximum norm of direct effects
@@ -76,7 +76,7 @@ def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.
 
 def simpler_weights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
-    Returns weights generated from simpler model
+    Returns weights generated from EVEN simpler model (doesn't take degrees into acount)
 
     A (numpy array): adjacency matrix of the network
     diag (float): maximum norm of direct effects
@@ -95,26 +95,6 @@ def simpler_weights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=n
     C_diag = diag*rand_diag
     C.setdiag(C_diag)
 
-    return C
-
-def weights_im_normal(n, d=1, sigma=0.1, neg=0):
-    '''
-    Returns weights C (numpy array) under the influence and malleability framework,
-    with Gaussian mean-zero noise.
-
-    n (int): number of individuals
-    d (int): number of influence dimensions
-    sigma (float): standard deviation of noise
-    neg (0 or 1): 0 if restricted to non-negative weights, 1 otherwise
-    '''
-    X = np.random.rand(d,n)              # influence
-    W = np.random.rand(d,n)              # malliability
-
-    if neg==0:
-      E = np.abs(np.random.normal(scale=sigma, size=(n,n)))
-    else:
-      E = np.random.normal(scale=sigma, size=(n,n))
-    C = X.T.dot(W)+E
     return C
 
 def normalized_weights(C, diag=10, offdiag=8):
@@ -142,152 +122,6 @@ def normalized_weights(C, diag=10, offdiag=8):
 
     return C
 
-def bf_clusters(num, pop):
-    '''
-    Returns an 1 by N array where the each index corresponds to a unit in the population and the value at that index is their cluster assignment
-
-    Parameters
-    ----------
-    num (int)
-        number of clusters (should be a perfect square nc*nc)
-    pop (int)
-        size of the population (should be a perfect square n*n)
-
-    Returns
-    -------
-    clusters
-        cluster assignments for each person
-    
-    clusters.flatten() (numpy array of size 1 by pop)
-        cluster assignments for each person
-        clusters[i]=j means that population unit i in [pop] is assigned to cluster j in [num]
-    '''
-    
-    nc = int(np.sqrt(num)) #sqrt of the total number of clusters
-    n = int(np.sqrt(pop))  #sqrt of the population size
-    k = int(np.ceil(n/nc)) #"typical" cluster contains k*k units
-    divides = n%k==0
-    clusters = np.zeros((n,n), dtype=int)
-    
-    for i in range(n):
-        for j in range(n):
-            s,t = lat_toCluster(i,j,k,divides=divides) 
-            clusters[i,j] = nc*s + t
-    return clusters, clusters.flatten()
-
-def lat_toCluster(I,J,k,q1=0,q2=0,divides = False):
-    '''
-    Returns the cluster assignment (s,t) of unit(s) (i,j) for i in I and j in J
-    population size: n*n
-    number of clusters: nc*nc
-
-    Parameters
-    -----------
-    i : int or np.array
-        row position of unit on n by n lattice (or array of row positions)
-    j : int or np.array
-        column position of unit on n by n lattice (or array of col positions)
-    k : int
-        typical cluster side length (each cluster is itself a k by k grid graph with k << n)
-    q1 : int
-        "origin" row position marking the END (inclusive) of first cluster
-    q2 : int
-        "origin" col position marking the END (inclusive) of first cluster
-    divides : bool
-        if k divides n, set to True
-
-    Returns
-    -----------
-    s : int
-        row position of the cluster on nc by nc lattice (or array of row positions)
-    t : int
-        column position of the cluster on nc by nc lattice (or array of col positions)
-    '''
-    if divides:
-        s = np.floor(I/k)
-        t = np.floor(J/k)
-    else:
-        s = np.ceil((I-q1)/k)
-        t = np.ceil((J-q2)/k)
-
-    return s.astype(int),t.astype(int)
-
-def lat_toUnit(s,t,k,n,q1=0,q2=0):
-    '''
-    Returns the (row,column) indices of popluation units (on the n by n lattice) that belong to cluster (s,t)
-    population size: n*n
-    number of clusters: nc*nc
-
-    Parameters
-    -----------
-    s (int): 
-        row position of cluster on the nc by nc lattice of clusters
-    t (int):
-        column position of cluster on the nc by nc lattice of clusters
-    k (int):
-        typical cluster side length (average cluster contains k*k units)
-    n (int): 
-        population is represented by an n by n square lattice/grid graph
-    q1 (int):
-        "origin" row position marking the end (inclusive) of first cluster
-    q2 (int):
-        "origin" col position marking the end (inclusive) of first cluster
-    
-    Returns
-    -------
-    I (numpy array):
-        TODO
-    J (numpy array):
-        TODO
-    '''
-    if n%k==0:
-        starti = np.maximum(0,s*k)
-        stopi = (s+1)*k - 1
-        startj = np.maximum(0,t*k)
-        stopj = (t+1)*k - 1
-    else:
-        starti = np.maximum(0,q1 + 1 + (s-1)*k)
-        stopi = np.minimum(q1 + s*k, n-1)
-        startj = np.maximum(0,q2 + 1 + (t-1)*k)
-        stopj = np.minimum(q2 + t*k, n-1)
-    
-    I = np.linspace(starti,stopi,stopi-starti+1,dtype=int)
-    J = np.linspace(startj,stopj,stopj-startj+1,dtype=int)
-    
-    return I,J
-
-def cluster_neighborhood(A,i,k):
-    '''
-    Returns a list of tuples corresponding to the labels (s,t) of clusters adjacent to i
-    A = adjacency matrix for population size n^2
-    i = the unit we want to compute a neighborhood for
-    k = "typical" cluster side length
-    '''
-    pop_size = np.shape(A)[0] 
-    n = int(np.sqrt(pop_size))  # population size is n^2
-    #nc = int(np.ceil(n/k)**2)   # number of clusters is nc^2
-
-    # get indicies of i's neighbors (nonzero entries in i-th row of A)
-    neighbors = np.nonzero(A[[i],:])[1]
-    
-    # We have nc^2 clusters represented by an nc x nc grid
-    # We have labels (s,t) in [nc] x [nc] for each cluster
-    # We also have labels k in [nc^2] for each cluster
-    # Given (s,t), k = nc*s + t. Given k, (s,t)=(np.floor(k/nc),k%nc).
-    # For each neighbor, get their cluster assignment (s,t)
-    cluster_assignments = []
-    for x in np.nditer(neighbors):
-        # get the (i,j) coordinate of this neighbor on the population lattice [n] x [n]
-        i = int(np.floor(x/n))
-        j = x % n
-        s,t = lat_toCluster(i,j,k,divides=(n%k==0))
-        cluster_assignments.append((s,t))
-    
-    # remove duplicates
-    cluster_assignments = list(set(cluster_assignments))
-
-    return cluster_assignments
-
 def bernoulli_cluster(num,p,clusters):
     '''
     num (int): number of clusters (should be a perfect square nc*nc)
@@ -306,13 +140,12 @@ def bernoulli_cluster(num,p,clusters):
     return Cz, flatCz, z
 
 def select_clusters_bernoulli(numOfClusters, q):
-    '''
-    Assumes clusters are labeled 0,1,2,...,numOfClusters-1 and randomly chooses clusters according to a Bernoulli(q) design
+    '''Chooses clusters according to simple Bernoulli(q) randomized design
     
     Parameters
     ------------
     numOfClusters : int
-        NC=nc**2; the total number of clusters; given population size n*n, NC = ceil(n/k)**2 where k is the cluster side length
+        number of clusters
     q : float
         fraction of clusters you wish to select (in expectation)
 
@@ -320,22 +153,19 @@ def select_clusters_bernoulli(numOfClusters, q):
     --------
     selected : numpy array
         array of the labels of the randomly selected clusters
-
     '''
 
     design = (np.random.rand(numOfClusters) < q) + 0
-    selected = np.where(design == 1)
+    selected = np.where(design == 1)[0]
     return selected
 
 def select_clusters_complete(numOfClusters, K):
-    '''
-    Assumes clusters are labeled 0,1,2,...,numOfClusters-1 and samples K clusters uniformly at random from all subsets of clusters of size K 
-    (i.e. according to completely randomized design)
+    '''Selects clusters according to complete(K/numOfClusters) RD
     
     Parameters
     ------------
     numOfClusters : int
-        NC=nc**2; the total number of clusters; given population size n*n, NC = ceil(n/k)**2 where k is the cluster side length
+        number of clusters
     K : int
         number of clusters you wish to select
 
@@ -352,28 +182,6 @@ def select_clusters_complete(numOfClusters, K):
     selected = np.where(design==1)[0]
     
     return selected
-
-def idx_of_U(selectedClusters, clusters_flat):
-    '''
-    Returns the population units in [N] whose clusters were selected, 
-    where where N=n*n is the size of the population
-
-    Parameters
-    -----------
-    selectedClusters : array
-        The clusters selected to be part of the staggered rollout experiment
-    clusters_flat : array
-        cluster assignments for each person in [N]
-        clusters_flat[i]=j means that population unit i in [N] is assigned to cluster j in [NC]
-    
-    Returns
-    -----------
-    lst : list
-        list of the nodes whose clusters were selected (U)
-    '''
-    st = set(selectedClusters)
-    lst = [i for i, e in enumerate(clusters_flat) if e in st]
-    return lst
 
 def zU_to_z(z_U, U, z_U_prime, Uprime, n):
     '''
@@ -673,3 +481,84 @@ def diff_in_means_fraction(n, y, A, z, tol):
     if np.sum(control) > 0:
         est = est - y.dot(control)/np.sum(control)
     return est
+
+#######################################
+# Estimators - Horvitz-Thomson & Hajek
+#######################################
+
+def horvitz_thompson(n, nc, y, A, z, q, p):
+    '''Computes the Horvitz-Thompson estimate of the TTE under Bernoulli design or Cluster-Bernoulli design.
+    
+    Parameters
+    ----------
+    n : int
+        the size of the population/network
+    nc : int
+        the number of clusters (equals n if simple Bernoulli design with no clustering)
+    y : numpy array
+        the outcomes of each unit in the population
+    A : scipy sparse array
+        adjacency matrix of the network such that A[i,j]=1 indicates that unit j is an in-neighbor of i
+    z : numpy array
+        the treatment assignment of each unit in the population
+    q : float
+        probability that a cluster is indepdently chosen for treatment (should equal 1 under simple Bernoulli design with no clustering)
+    p : float
+        the treatment probability for chosen clusters in the staggered rollout
+    '''
+    neighborhoods = [list(row.nonzero()[1]) for row in A] # list of neighbors of each unit
+    neighborhood_sizes = A.sum(axis=1).tolist() # size of each unit's neighborhood
+    neighbor_treatments = [list(z[neighborhood]) for neighborhood in neighborhoods] # list of treatment assignments in each neighborhood
+
+    A = A.multiply(scipy.sparse.csr_array(np.tile(np.repeat(np.arange(1,nc+1),n//nc), (n,1)))) # modifies the adjancecy matrix so that if there's an edge from j to i, A[i,j]=cluster(j)
+    cluster_neighborhoods = [np.unique(row.data,return_counts=True) for row in A] # for each i, cluster_neighborhoods[i] = [a list of clusters i's neighbors belong to, a list of how many neighbors are in each of these clusters]
+    cluster_neighborhood_sizes = [len(x[0]) for x in cluster_neighborhoods] # size of each unit's cluster neighborhood
+    
+    # Probabilities of each person's neighborhood being entirely treated or entirely untreated
+    all_treated_prob = np.multiply(np.power(p, neighborhood_sizes), np.power(q, cluster_neighborhood_sizes))
+    none_treated_prob = [np.prod((1-q) + np.power(1-p, x[1])*q) for x in cluster_neighborhoods]
+    
+    # Indicators of each person's neighborhood being entirely treated or entirely untreated
+    all_treated = [np.prod(treatments) for treatments in neighbor_treatments]
+    none_treated = [all(z == 0 for z in treatments)+0 for treatments in neighbor_treatments]
+
+    zz = np.nan_to_num(np.divide(all_treated,all_treated_prob) - np.divide(none_treated,none_treated_prob))
+
+    return 1/n * y.dot(zz)
+
+"""
+def horvitz_thompson(n, p, y, A, z, clusters=np.array([])):
+    '''
+    TODO
+    '''
+    if clusters.size == 0:
+        zz = np.prod(np.tile(z/p,(n,1)),axis=1, where=A==1) - np.prod(np.tile((1-z)/(1-p),(n,1)),axis=1, where=A==1)
+    else:
+        deg = np.sum(clusters,axis=1)
+        wt_T = np.power(p,deg)
+        wt_C = np.power(1-p,deg)
+        zz = np.multiply(np.prod(A*z,axis=1),wt_T) - np.multiply(np.prod(A*(1-z),axis=1),wt_C)
+    return 1/n * y.dot(zz)
+
+def hajek(n, p, y, A, z, clusters=np.array([])): 
+    '''
+    TODO
+    '''
+    if clusters.size == 0:
+        zz_T = np.prod(np.tile(z/p,(n,1)), axis=1, where=A==1)
+        zz_C = np.prod(np.tile((1-z)/(1-p),(n,1)), axis=1, where=A==1)
+    else:
+        deg = np.sum(clusters,axis=1)
+        wt_T = np.power(p,deg)
+        wt_C = np.power(1-p,deg)
+        zz_T = np.multiply(np.prod(A*z,axis=1),wt_T) 
+        zz_C = np.multiply(np.prod(A*(1-z),axis=1),wt_C)
+    all_ones = np.ones(n)
+    est_T = 0
+    est_C=0
+    if all_ones.dot(zz_T) > 0:
+        est_T = y.dot(zz_T) / all_ones.dot(zz_T)
+    if all_ones.dot(zz_C) > 0:
+        est_C = y.dot(zz_C) / all_ones.dot(zz_C)
+    return est_T - est_C
+"""
