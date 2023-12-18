@@ -42,7 +42,7 @@ def horvitz_thompson(n, nc, y, A, z, q, p):
 
     return 1/n * y.dot(zz)
 
-def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graphNum, T):
+def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T):
     '''
     beta = degree of the model / polynomial
     n = population size
@@ -73,47 +73,46 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
     p = B/q
     G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
 
-    for g in range(graphNum):
-        # random weights for the graph edges
-        rand_wts = np.random.rand(n,3)
-        alpha = rand_wts[:,0].flatten()
-        C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
-        C = covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
+    # random weights for the graph edges
+    rand_wts = np.random.rand(n,3)
+    alpha = rand_wts[:,0].flatten()
+    C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+    C = covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
+    
+    # potential outcomes model
+    fy = ppom(beta, C, alpha)
+
+    # compute the true TTE
+    TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))
+    print("TTE: {}\n".format(TTE))
+    
+    ####### Estimate ########
+
+    # parameters for the staggered rollout - Cluster Randomized Design
+    P = seq_treatment_probs(beta, p)        # treatment probabilities for each step of the staggered rollout on U
+    P_prime = seq_treatment_probs(beta, 0)  # treatment probabilities for each step of the staggered rollout on the boundary of U
+
+    TTE_ht = np.zeros(T)
+    for i in range(T):
+        # select clusters 
+        if design == "complete":
+            selected = select_clusters_complete(nc, K)
+        else:
+            selected = select_clusters_bernoulli(nc, q)
         
-        # potential outcomes model
-        fy = ppom(beta, C, alpha)
+        # U
+        selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
 
-        # compute the true TTE
-        TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))
-        print("TTE: {}\n".format(TTE))
-        
-        ####### Estimate ########
+        # Cluster Randomized Design
+        Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
+        z = Z[beta,:]
+        y = fy(z)
 
-        # parameters for the staggered rollout - Cluster Randomized Design
-        P = seq_treatment_probs(beta, p)        # treatment probabilities for each step of the staggered rollout on U
-        P_prime = seq_treatment_probs(beta, 0)  # treatment probabilities for each step of the staggered rollout on the boundary of U
+        TTE_ht[i] = horvitz_thompson(n, nc, y, A, z, q, p)
 
-        TTE_ht = np.zeros(T)
-        for i in range(T):
-            # select clusters 
-            if design == "complete":
-                selected = select_clusters_complete(nc, K)
-            else:
-                selected = select_clusters_bernoulli(nc, q)
-            
-            # U
-            selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
-
-            # Cluster Randomized Design
-            Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
-            z = Z[beta,:]
-            y = fy(z)
-
-            TTE_ht[i] = horvitz_thompson(n, nc, y, A, z, q, p)
-
-        print("H-T: {}".format(np.sum(TTE_ht)/T))
-        print("H-T relative bias: {}".format(((np.sum(TTE_ht)/T)-TTE)/TTE)) #(est-TTE)/TTE ((np.sum(TTE_ht)/T)-TTE)/TTE
-        print("H-T MSE: {}\n".format(np.sum((TTE_ht-TTE)**2)/T))
+    print("H-T: {}".format(np.sum(TTE_ht)/T))
+    print("H-T relative bias: {}".format(((np.sum(TTE_ht)/T)-TTE)/TTE)) #(est-TTE)/TTE ((np.sum(TTE_ht)/T)-TTE)/TTE
+    print("H-T MSE: {}\n".format(np.sum((TTE_ht-TTE)**2)/T))
 
 def covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=0):
     '''
@@ -141,7 +140,7 @@ def covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=0):
 
 def SBM(n, k, Pii, Pij):
     '''
-    Returns the adjacency matrix of a stochastic block model on n nodes with k communities
+    Returns the adjacency matrix (as a scipy sparse array) of a stochastic block model on n nodes with k communities
     The edge prob within the same community is Pii
     The edge prob across different communities is Pij
     '''
@@ -169,7 +168,6 @@ phi = 0
 #q_or_K = int(np.floor(B * nc / p))
 design = "bernoulli"
 q_or_K = 0.5
-graphNum = 5
 T = 100
 
-run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graphNum, T)
+run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T)
