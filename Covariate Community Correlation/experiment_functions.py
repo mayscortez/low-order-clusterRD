@@ -46,6 +46,21 @@ def ppom(beta, C, alpha):
 
 bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
+def SBM(n, k, Pii, Pij):
+    '''
+    Returns the adjacency matrix (as a scipy sparse array) of a stochastic block model on n nodes with k communities
+    The edge prob within the same community is Pii
+    The edge prob across different communities is Pij
+    '''
+    sizes = np.zeros(k, dtype=int) + n//k
+    probs = np.zeros((k,k)) + Pij
+    np.fill_diagonal(probs, Pii)
+    G = nx.stochastic_block_model(sizes, probs)
+    A = nx.adjacency_matrix(nx.stochastic_block_model(sizes, probs))
+    A.setdiag(1)
+    #blocks = nx.get_node_attributes(G, "block")
+    return G, A
+
 def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
     Returns weights generated from simpler model (that incorporates degrees)
@@ -97,6 +112,30 @@ def simpler_weights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=n
 
     return C
 
+def covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=0):
+    '''
+    Returns a weighted adjacency matrix where weights are determined by covariate type. We assume a binary effect types covariate
+
+    C (scipy array): weights without effect type covariate
+    minimal (float): 
+    extreme (int):
+    phi: probability that an individual's covariate type flips
+    '''
+    n = C.shape[0]
+    scaling1 = np.zeros(n//2) + minimal
+    scaling2 = np.zeros(n//2) + extreme
+
+    R1 = np.random.rand(n//2)
+    R2 = np.random.rand(n//2)
+    R1 = (R1 < phi) + 0
+    R2 = (R2 < phi) + 0
+
+    scaling1[np.nonzero(R1)] = extreme
+    scaling2[np.nonzero(R2)] = minimal
+
+    scaling = np.concatenate((scaling1,scaling2))
+    return C.multiply(scaling)
+
 def normalized_weights(C, diag=10, offdiag=8):
     '''
     Returns normalized weights (or normalized weighted adjacency matrix) as numpy array
@@ -121,23 +160,6 @@ def normalized_weights(C, diag=10, offdiag=8):
     C += np.diag(C_diag)
 
     return C
-
-def bernoulli_cluster(num,p,clusters):
-    '''
-    num (int): number of clusters (should be a perfect square nc*nc)
-    p (float): treatment probability in (0,1)
-    clusters (N by 1 numpy array): clusters[i] = j says unit i in [N] is in cluster j in [NC]
-
-    z (numpy array): i-th element is treatment assignment of unit i
-    Cz (numpy array): (s,t)-th element is treatment assignment of cluster (s,t)
-    flatCz (numpy array): given cluster label k in [nc*nc], return treatment assignment
-    '''
-    nc = int(np.sqrt(num))
-    Cz = (np.random.rand(nc,nc) < p) + 0 # matrix where (s,t) entry is treatment assignment of cluster (s,t)
-    flatCz = Cz.flatten() # each cluster (s,t) gets assigned to an index i in [c] where c = number of clusters = (rows+1)*(cols+1)
-    treated_cluster_indices = np.where(flatCz == 1)[0] # returns the index labels of clusters that are assigned to treatment
-    z = np.isin(clusters,treated_cluster_indices)+0 # if a person i is assigned to a treated cluster, then z(i) should equal 1 
-    return Cz, flatCz, z
 
 def select_clusters_bernoulli(numOfClusters, q):
     '''Chooses clusters according to simple Bernoulli(q) randomized design
