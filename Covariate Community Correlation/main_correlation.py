@@ -8,8 +8,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import random
 import time
-from myFunctions import *
-from myFunctions import staggered_rollout_bern_clusters
+from experiment_functions import *
 
 def main(beta, graphNum, T, B=0.06, p=1):
     '''
@@ -26,8 +25,8 @@ def main(beta, graphNum, T, B=0.06, p=1):
     graphStr = "SBM"    # stochastic block model    
     n = 1000            # number of nodes
     nc = 50             # number of communities
-    p_in = 10/(n/nc)    # edge probability within communities
-    p_out = 0           # edge probability between different communities
+    p_in = 0.4    # edge probability within communities
+    p_out = (0.5-p_in)/49           # edge probability between different communities
 
     K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
     cluster_selection_RD = "bernoulli"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
@@ -131,7 +130,7 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
-        # TODO: Add HT and Hajek estimators
+        # TODO: Hajek estimator
 
         alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
@@ -189,20 +188,6 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
                 results.append(dict_base.copy())
 
     return results
-
-def SBM(n, k, Pii, Pij):
-    '''
-    Returns the adjacency matrix of a stochastic block model on n nodes with k communities
-    The edge prob within the same community is Pii
-    The edge prob across different communities is Pij
-    '''
-    sizes = np.zeros(k, dtype=int) + n//k
-    probs = np.zeros((k,k)) + Pij
-    np.fill_diagonal(probs, Pii)
-    G = nx.stochastic_block_model(sizes, probs)
-    A = nx.adjacency_matrix(nx.stochastic_block_model(sizes, probs))
-    #blocks = nx.get_node_attributes(G, "block")
-    return G, A
 
 def covariate_type(i, n, K, num=2):
     '''
