@@ -1,16 +1,19 @@
 from scipy.sparse import csr_array
-from myFunctions import *
+import experiment_functions as exFun
 import numpy as np 
+import time
+import warnings
+warnings.simplefilter('ignore')
 
 def horvitz_thompson(n, nc, y, A, z, q, p):
-    '''Computes the Horvitz-Thompson estimate of the TTE under Bernoulli design or Cluster-Bernoulli design.
+    '''Computes the Horvitz-Thompson estimate of the TTE under Cluster-Bernoulli design.
     
     Parameters
     ----------
     n : int
         the size of the population/network
     nc : int
-        the number of clusters (equals n if simple Bernoulli design with no clustering)
+        the number of clusters
     y : numpy array
         the outcomes of each unit in the population
     A : scipy sparse array
@@ -18,7 +21,7 @@ def horvitz_thompson(n, nc, y, A, z, q, p):
     z : numpy array
         the treatment assignment of each unit in the population
     q : float
-        probability that a cluster is indepdently chosen for treatment (should equal 1 under simple Bernoulli design with no clustering)
+        probability that a cluster is indepdently chosen for treatment
     p : float
         the treatment probability for chosen clusters in the staggered rollout
     '''
@@ -71,16 +74,16 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T):
         K = int(np.floor(q*nc))
 
     p = B/q
-    G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
+    G, A = exFun.SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
 
     # random weights for the graph edges
     rand_wts = np.random.rand(n,3)
     alpha = rand_wts[:,0].flatten()
-    C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
-    C = covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
+    C = exFun.simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+    C = exFun.covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
     
     # potential outcomes model
-    fy = ppom(beta, C, alpha)
+    fy = exFun.ppom(beta, C, alpha)
 
     # compute the true TTE
     TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))
@@ -89,22 +92,22 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T):
     ####### Estimate ########
 
     # parameters for the staggered rollout - Cluster Randomized Design
-    P = seq_treatment_probs(beta, p)        # treatment probabilities for each step of the staggered rollout on U
-    P_prime = seq_treatment_probs(beta, 0)  # treatment probabilities for each step of the staggered rollout on the boundary of U
+    P = exFun.seq_treatment_probs(beta, p)        # treatment probabilities for each step of the staggered rollout on U
+    P_prime = exFun.seq_treatment_probs(beta, 0)  # treatment probabilities for each step of the staggered rollout on the boundary of U
 
     TTE_ht = np.zeros(T)
     for i in range(T):
         # select clusters 
         if design == "complete":
-            selected = select_clusters_complete(nc, K)
+            selected = exFun.select_clusters_complete(nc, K)
         else:
-            selected = select_clusters_bernoulli(nc, q)
+            selected = exFun.select_clusters_bernoulli(nc, q)
         
         # U
         selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
 
         # Cluster Randomized Design
-        Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
+        Z = exFun.staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
         z = Z[beta,:]
         y = fy(z)
 
@@ -113,61 +116,27 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T):
     print("H-T: {}".format(np.sum(TTE_ht)/T))
     print("H-T relative bias: {}".format(((np.sum(TTE_ht)/T)-TTE)/TTE)) #(est-TTE)/TTE ((np.sum(TTE_ht)/T)-TTE)/TTE
     print("H-T MSE: {}\n".format(np.sum((TTE_ht-TTE)**2)/T))
+ 
 
-def covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=0):
-    '''
-    Returns a weighted adjacency matrix where weights are determined by covariate type. We assume a binary effect types covariate
+########################
+## Run the experiment ##
+########################
+avg_deg = 10            # average network degree
+beta = 1                # model degree
+n = 1000                # network size
+nc = 50                 # number of clusters/blocks
+B = 0.5                 # treatment budget
+p = 1                   # treatment probability for those in chosen clusters
+r = 1.25                # governs the relative magnitude of the indirect effects relative to the direct effects
+diag = 1                # maxium norm of the direct effects before covariate type scaling
+Pii = avg_deg/(n/nc)    # edge probability between two nodes in the same cluster
+Pij = 0                 # edge probability between two nodes in different clusters
+phi = 0                 # probability of switching covariate types (phi = 0 means perfect homophily, phi = 0.5 means no homophily)
+design = "bernoulli"    # how to choose clusters; alternatively, design = "complete"
+q_or_K = 0.5            # q_or_K = int(np.floor(B * nc / p))
+T = 100                 # number of treatment assignment samples to average over
 
-    C (array): weights without effect type covariate
-    minimal (float): 
-    extreme (int):
-    phi: probability that an individual's covariate type flips
-    '''
-    n = C.shape[0]
-    scaling1 = np.zeros(n//2) + minimal
-    scaling2 = np.zeros(n//2) + extreme
-
-    R1 = np.random.rand(n//2)
-    R2 = np.random.rand(n//2)
-    R1 = (R1 < phi) + 0
-    R2 = (R2 < phi) + 0
-
-    scaling1[np.nonzero(R1)] = extreme
-    scaling2[np.nonzero(R2)] = minimal
-
-    scaling = np.concatenate((scaling1,scaling2))
-    return C.multiply(scaling)
-
-def SBM(n, k, Pii, Pij):
-    '''
-    Returns the adjacency matrix (as a scipy sparse array) of a stochastic block model on n nodes with k communities
-    The edge prob within the same community is Pii
-    The edge prob across different communities is Pij
-    '''
-    sizes = np.zeros(k, dtype=int) + n//k
-    probs = np.zeros((k,k)) + Pij
-    np.fill_diagonal(probs, Pii)
-    G = nx.stochastic_block_model(sizes, probs)
-    A = nx.adjacency_matrix(nx.stochastic_block_model(sizes, probs))
-    A.setdiag(1)
-    #blocks = nx.get_node_attributes(G, "block")
-    return G, A
-
-avg_deg = 10
-beta = 1
-n = 1000
-nc = 50
-B = 0.5
-p = 1
-r = 1.25
-diag = 1
-Pii = avg_deg/(n/nc)
-Pij = 0
-phi = 0
-#design = "complete"
-#q_or_K = int(np.floor(B * nc / p))
-design = "bernoulli"
-q_or_K = 0.5
-T = 100
-
+startTime = time.time()
 run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T)
+executionTime = time.time()-startTime
+print('Total runtime in seconds: {}\nTotal runtime in minutes: {}'.format(executionTime, executionTime/60)) 
