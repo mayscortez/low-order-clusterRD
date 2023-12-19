@@ -3,7 +3,7 @@ import experiment_functions as exFun
 import numpy as np 
 import time
 import warnings
-warnings.simplefilter('ignore')
+#warnings.simplefilter('ignore')
 
 def horvitz_thompson(n, nc, y, A, z, q, p):
     '''Computes the Horvitz-Thompson estimate of the TTE under Cluster-Bernoulli design.
@@ -79,8 +79,9 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T):
     # random weights for the graph edges
     rand_wts = np.random.rand(n,3)
     alpha = rand_wts[:,0].flatten()
-    C = exFun.simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
-    C = exFun.covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
+    #C = exFun.simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+    #C = exFun.simple_binary_weights(C, minimal = 1/4, extreme = 4, phi=phi)
+    C = exFun.binary_covariate_weights(nc, A, phi)
     
     # potential outcomes model
     fy = exFun.ppom(beta, C, alpha)
