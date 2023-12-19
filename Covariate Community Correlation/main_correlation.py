@@ -9,6 +9,8 @@ import matplotlib.pyplot as plt
 import random
 import time
 from experiment_functions import *
+import pickle
+import sys
 
 def main(beta, graphNum, T, B=0.06, p=1):
     '''
@@ -25,8 +27,8 @@ def main(beta, graphNum, T, B=0.06, p=1):
     graphStr = "SBM"    # stochastic block model    
     n = 1000            # number of nodes
     nc = 50             # number of communities
-    p_in = 0.4    # edge probability within communities
-    p_out = (0.5-p_in)/49           # edge probability between different communities
+    p_in = 0.5#0.4    # edge probability within communities
+    p_out = 0 #(0.5-p_in)/49           # edge probability between different communities
 
     K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
     cluster_selection_RD = "bernoulli"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
@@ -99,9 +101,6 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
 
     G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
 
-    # plot_degrees(G, Pii, Pij)
-    # draw_SBM(n, K, G, Pii, Pij)
-
     results = []
     for g in range(graphNum):
         graph_rep = str(g)
@@ -110,8 +109,7 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         # random weights for the graph edges
         rand_wts = np.random.rand(n,3)
         alpha = rand_wts[:,0].flatten()
-        C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
-        C = covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
+        C = binary_covariate_weights(nc, A, phi)
         
         # potential outcomes model
         fy = ppom(beta, C, alpha)
@@ -165,22 +163,32 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
             dict_base.update({'rep': i, 'design': 'Cluster'})
 
             # Cluster Randomized Design
-            Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
-            z = Z[beta,:]
-            y = fy(z)
-            sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
+            if selected_nodes:
+                Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
+                z = Z[beta,:]
+                y = fy(z)
+                sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
             for x in range(len(estimators_clusterRD)):
-                est = estimators_clusterRD[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
+                if selected_nodes:
+                    est = estimators_clusterRD[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
+                else:
+                    est = 0
                 dict_base.update({'Estimator': alg_names_clusterRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
+                # Testing for edge case
+                if isinstance(est, list):
+                    with open('error_variables.picle', 'wb') as f:
+                        pickle.dump({'A': A, 'P': P, 'H': H, 'selected': selected, 'U': selected_nodes, 'Z': Z, 'sums': sums, 'sums_U': sums_U, 'estimator': alg_names_clusterRD[x], 'estimate': est}, f)
+                    raise ValueError('The estimator {} returned an invalid value {}'.format(alg_names_clusterRD[x], est))
+
 
             # Bernoulli Randomized Design (No Clusters)
             dict_base.update({'design': 'Bernoulli'})
             Z_bern = staggered_rollout_bern(n, P_bernRD)
             z_bern = Z_bern[beta,:]
             y_bern = fy(z)
-            sums_bern = outcome_sums(fy, Z_bern, [])
+            sums_bern = outcome_sums(fy, Z_bern, []) #
 
             for x in range(len(estimators_bernRD)):
                 est = estimators_bernRD[x](y_bern,z_bern,sums_bern,H_bern) # have it include both the parameters for all as well as just U
