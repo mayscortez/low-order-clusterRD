@@ -9,13 +9,14 @@ def main():
     graph = "SBM" 
     n = 1000
     nc = 50
-    q = 0.5 
-    B = 0.25
+    q = 0.06 
+    B = 0.06
     K = int(np.floor(q*nc))
-    q_or_K_st = '_K' + str(K)
+    p = B/q
+    #q_or_K_st = '_K' + str(K)
     Pii = 10/(n/nc) 
     
-    fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + q_or_K_st  # naming convention
+    fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','')  # naming convention
     x_label = [fixed + "_incrEdges", fixed + "_incrEdges", fixed + "_incrEdges"]
     x_var = ['Pij', 'global', 'average']
     x_plot = ['Probability of an edge between 2 communities $P_{out}$',

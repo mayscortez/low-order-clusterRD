@@ -11,8 +11,8 @@ def main(beta=1, B=0.05, p=1):
     graph = "SBM"
     n = 1000
     nc = 50
-    p_in = 10/(n/nc) 
-    p_out = 0
+    p_in = 0.5 #10/(n/nc) 
+    p_out = 0 #(0.5-p_in)/49 
 
     Bstr = str(np.round(B,3)).replace('.','')
     pstr = str(np.round(p,3)).replace('.','')
@@ -41,6 +41,7 @@ def plot(graph,x_var,x_label,model,x_plot,title):
     print(experiment+deg_str+'_'+x_var+estimators_str)
 
     # Create and save plots
+    test_str = load_path+graph+experiment+'-full-data' + deg_str+ '.csv'
     df = pd.read_csv(load_path+graph+experiment+'-full-data' + deg_str+ '.csv')
     newData = df.loc[df['Estimator'].isin(estimators)]
 
@@ -83,11 +84,10 @@ def plot(graph,x_var,x_label,model,x_plot,title):
 
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    beta = [1,2,3]
-    B = [0.06, 0.5, 0.5]
-    probs = [[0.06, 0.25, 1/3, 2/3, 1],     # K in [50, 12, 9, 6, 3]
-            [0.5, 0.625, 25/33, 25/29, 1],  # K in [50, 40, 33, 29, 25]
-            [0.5, 0.625, 25/33, 25/29, 1]]
+    beta = [1,2]
+    B = [0.06, 0.5]
+    probs = [[0.06, 0.25, 1/3, 2/3, 1],    # K in [50, 12, 9, 6, 3] #[0.06, 0.25, 1/3, 2/3, 1]
+            [0.5, 0.625, 25/33, 25/29, 1],] # K in [50, 40, 33, 29, 25]
 for b in range(len(beta)):
     print('Plotting degree: {}'.format(b+1))
     for p in probs[b]:
