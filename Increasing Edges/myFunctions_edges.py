@@ -46,6 +46,60 @@ def ppom(beta, C, alpha):
 
 bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
+def SBM(n, k, Pii, Pij):
+    '''
+    Returns the adjacency matrix (as a scipy sparse array) of a stochastic block model on n nodes with k communities
+    The edge prob within the same community is Pii
+    The edge prob across different communities is Pij
+    '''
+    sizes = np.zeros(k, dtype=int) + n//k
+    probs = np.zeros((k,k)) + Pij
+    np.fill_diagonal(probs, Pii)
+    G = nx.stochastic_block_model(sizes, probs, directed=True, selfloops=True)
+    A = nx.to_scipy_sparse_array(G, format='coo')
+    A.setdiag(1)
+    return G, scipy.sparse.csr_array(A)
+
+def binary_covariate_weights(nc, A, phi, mu1 = 1/2, mu2 = 2.5):
+    ''' Returns weighted adjacency matrix, where weights depend on a binary covariate type
+
+    C[i,j] ~ Normal(mu1*mu1, 0.5) if both i and j are type 1
+    C[i,j] ~ Normal(mu2*mu2, 0.5) if both i and j are type 2
+    C[i,j] ~ Normal(mu1*mu2, 0.5) if i and j are different types
+
+    Parameters
+    ----------
+    nc : int
+        number of clusters
+    mu1 : float
+
+    mu2: float
+        
+    phi : float
+        probability of switching type
+    A : scipy sparse csr array
+        adjacency matrix
+
+    Returns
+    ---------
+    C : scipy sparse csr array
+        weighted adjacency matrix
+    '''
+    n = A.shape[0]
+    means = np.ones(n)
+    midpoint = int((nc//2)*(n/nc))
+    means[0:midpoint] = mu1
+    means[midpoint:] = mu2
+
+    rng  = np.random.default_rng()
+    switchers = rng.random(n)
+    switchers = (switchers < phi) + 0 
+    means = np.concatenate((np.where(switchers[0:midpoint]==1, mu2, means[0:midpoint]), np.where(switchers[midpoint:]==1, mu1, means[midpoint:])))
+    means = np.outer(means, means)
+    weights = rng.normal(loc=means, scale=0.5)
+
+    return scipy.sparse.csr_array(A.multiply(weights))
+
 def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
     Returns weights generated from simpler model
@@ -72,26 +126,6 @@ def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.
     C_diag = diag*rand_diag
     C.setdiag(C_diag)
 
-    return C
-
-def weights_im_normal(n, d=1, sigma=0.1, neg=0):
-    '''
-    Returns weights C (numpy array) under the influence and malleability framework,
-    with Gaussian mean-zero noise.
-
-    n (int): number of individuals
-    d (int): number of influence dimensions
-    sigma (float): standard deviation of noise
-    neg (0 or 1): 0 if restricted to non-negative weights, 1 otherwise
-    '''
-    X = np.random.rand(d,n)              # influence
-    W = np.random.rand(d,n)              # malliability
-
-    if neg==0:
-      E = np.abs(np.random.normal(scale=sigma, size=(n,n)))
-    else:
-      E = np.random.normal(scale=sigma, size=(n,n))
-    C = X.T.dot(W)+E
     return C
 
 def normalized_weights(C, diag=10, offdiag=8):
@@ -138,7 +172,7 @@ def select_clusters_bernoulli(numOfClusters, q):
     '''
 
     design = (np.random.rand(numOfClusters) < q) + 0
-    selected = np.where(design == 1)
+    selected = np.where(design == 1)[0]
     return selected
 
 def select_clusters_complete(numOfClusters, K):
@@ -202,25 +236,40 @@ def zU_to_z(z_U, U, z_U_prime, Uprime, n):
 
     return z
 
-def staggered_rollout_bern(n, selected, P, bndry, P_prime):
+def staggered_rollout_bern(n, P):
   '''
-  Returns Treatment Vectors from Bernoulli Staggered Rollout for each time step 
+  Returns Treatment Samples from Bernoulli Staggered Rollout
+
+  beta (int): degree of potential outcomes model
+  n (int): size of population
+  P (numpy array): treatment probabilities for each time step
+  '''
+
+  ### Initialize ###
+  Z = np.zeros(shape=(P.size,n))   # for each treatment sample z_t
+  U = np.random.rand(n)
+
+  ### staggered rollout experiment ###
+  for t in range(P.size):
+    ## sample treatment vector ##
+    Z[t,:] = (U < P[t])+0
+
+  return Z
+
+def staggered_rollout_bern_clusters(n, selected, P, bndry, P_prime):
+  '''
+  Returns Treatment Samples from Bernoulli Staggered Rollout with clustering
 
   n (int): size of population
   selected (list): list of the nodes who were selected to be in the staggered rollout experiment
   P (numpy array): treatment probabilities for each time step for the selected group
   bndry (list): boundary of selected (neighbors of nodes in selected who are not themselves selected)
   P_prime (numpy array): treatment probabilities for each time step for the boundary group
-
-  Z (numpy array): treatment vector for all n population units for each time step in the staggered rollout
-  ZU (numpy array): treatment vector for only selected population units (U) for each time step in the staggered rollout
   '''
 
   ### Initialize ###
-  T = len(P)        # number of time steps
-  U = len(selected) # the size of U aka the number of selected nodes
-  Z = np.zeros(shape=(T,n))     # for each treatment sample z_t in {0,1}^n
-  #ZU = np.zeros(shape=(T,U))    # for each treatment sample z_t in {0,1}^|U|
+  T = len(P)
+  Z = np.zeros(shape=(T,n))   # for each treatment sample z_t
   W = np.random.rand(len(selected))
   W_prime = np.random.rand(len(bndry))
 
@@ -230,9 +279,8 @@ def staggered_rollout_bern(n, selected, P, bndry, P_prime):
     z_U = (W < P[t])+0
     z_U_prime = (W_prime < P_prime[t])+0
     Z[t,:] = zU_to_z(z_U, selected, z_U_prime, bndry, n)
-    #ZU[t,:] = z_U
 
-  return Z#,ZU
+  return Z
 
 def bern_coeffs(P):
   '''
@@ -276,12 +324,19 @@ def outcome_sums(Y, Z, selected):
    - each row should correspond to a timestep, i.e. Z should be beta+1 by n
   selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
   '''
-  sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0])  
-  for t in range(Z.shape[0]):
-    outcomes = Y(Z[t,:])
-    sums[t] = np.sum(outcomes)
-    sums_U[t] = np.sum(outcomes[selected])
-  return sums, sums_U
+  if selected:
+    sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0])  
+    for t in range(Z.shape[0]):
+        outcomes = Y(Z[t,:])
+        sums[t] = np.sum(outcomes)
+        sums_U[t] = np.sum(outcomes[selected])
+    return sums, sums_U
+  else:
+     sums = np.zeros(Z.shape[0])
+     for t in range(Z.shape[0]):
+        outcomes = Y(Z[t,:])
+        sums[t] = np.sum(outcomes)
+     return sums
 
 def graph_agnostic(n, sums, H):
     '''
@@ -426,3 +481,43 @@ def diff_in_means_fraction(n, y, A, z, tol):
     if np.sum(control) > 0:
         est = est - y.dot(control)/np.sum(control)
     return est
+
+def horvitz_thompson(n, nc, y, A, z, q, p):
+    '''Computes the Horvitz-Thompson estimate of the TTE under Bernoulli design or Cluster-Bernoulli design.
+    
+    Parameters
+    ----------
+    n : int
+        the size of the population/network
+    nc : int
+        the number of clusters (equals n if simple Bernoulli design with no clustering)
+    y : numpy array
+        the outcomes of each unit in the population
+    A : scipy sparse array
+        adjacency matrix of the network such that A[i,j]=1 indicates that unit j is an in-neighbor of i
+    z : numpy array
+        the treatment assignment of each unit in the population
+    q : float
+        probability that a cluster is indepdently chosen for treatment (should equal 1 under simple Bernoulli design with no clustering)
+    p : float
+        the treatment probability for chosen clusters in the staggered rollout
+    '''
+    neighborhoods = [list(row.nonzero()[1]) for row in A] # list of neighbors of each unit
+    neighborhood_sizes = A.sum(axis=1).tolist() # size of each unit's neighborhood
+    neighbor_treatments = [list(z[neighborhood]) for neighborhood in neighborhoods] # list of treatment assignments in each neighborhood
+
+    A = A.multiply(scipy.sparse.csr_array(np.tile(np.repeat(np.arange(1,nc+1),n//nc), (n,1)))) # modifies the adjancecy matrix so that if there's an edge from j to i, A[i,j]=cluster(j)
+    cluster_neighborhoods = [np.unique(row.data,return_counts=True) for row in A] # for each i, cluster_neighborhoods[i] = [a list of clusters i's neighbors belong to, a list of how many neighbors are in each of these clusters]
+    cluster_neighborhood_sizes = [len(x[0]) for x in cluster_neighborhoods] # size of each unit's cluster neighborhood
+    
+    # Probabilities of each person's neighborhood being entirely treated or entirely untreated
+    all_treated_prob = np.multiply(np.power(p, neighborhood_sizes), np.power(q, cluster_neighborhood_sizes))
+    none_treated_prob = [np.prod((1-q) + np.power(1-p, x[1])*q) for x in cluster_neighborhoods]
+    
+    # Indicators of each person's neighborhood being entirely treated or entirely untreated
+    all_treated = [np.prod(treatments) for treatments in neighbor_treatments]
+    none_treated = [all(z == 0 for z in treatments)+0 for treatments in neighbor_treatments]
+
+    zz = np.nan_to_num(np.divide(all_treated,all_treated_prob) - np.divide(none_treated,none_treated_prob))
+
+    return 1/n * y.dot(zz)

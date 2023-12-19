@@ -55,11 +55,10 @@ def SBM(n, k, Pii, Pij):
     sizes = np.zeros(k, dtype=int) + n//k
     probs = np.zeros((k,k)) + Pij
     np.fill_diagonal(probs, Pii)
-    G = nx.stochastic_block_model(sizes, probs)
-    A = nx.adjacency_matrix(nx.stochastic_block_model(sizes, probs))
+    G = nx.stochastic_block_model(sizes, probs, directed=True, selfloops=True)
+    A = nx.to_scipy_sparse_array(G, format='coo')
     A.setdiag(1)
-    #blocks = nx.get_node_attributes(G, "block")
-    return G, A
+    return G, scipy.sparse.csr_array(A)
 
 def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
@@ -112,7 +111,7 @@ def simpler_weights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=n
 
     return C
 
-def covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=0):
+def simple_binary_weights(C, minimal = 1/4, extreme = 4, phi=0):
     '''
     Returns a weighted adjacency matrix where weights are determined by covariate type. We assume a binary effect types covariate
 
@@ -160,6 +159,46 @@ def normalized_weights(C, diag=10, offdiag=8):
     C += np.diag(C_diag)
 
     return C
+
+def binary_covariate_weights(nc, A, phi, mu1 = 1/2, mu2 = 2.5):
+    ''' Returns weighted adjacency matrix, where weights depend on a binary covariate type
+
+    C[i,j] ~ Normal(mu1*mu1, 0.5) if both i and j are type 1
+    C[i,j] ~ Normal(mu2*mu2, 0.5) if both i and j are type 2
+    C[i,j] ~ Normal(mu1*mu2, 0.5) if i and j are different types
+
+    Parameters
+    ----------
+    nc : int
+        number of clusters
+    mu1 : float
+
+    mu2: float
+        
+    phi : float
+        probability of switching type
+    A : scipy sparse csr array
+        adjacency matrix
+
+    Returns
+    ---------
+    C : scipy sparse csr array
+        weighted adjacency matrix
+    '''
+    n = A.shape[0]
+    means = np.ones(n)
+    midpoint = int((nc//2)*(n/nc))
+    means[0:midpoint] = mu1
+    means[midpoint:] = mu2
+
+    rng  = np.random.default_rng()
+    switchers = rng.random(n)
+    switchers = (switchers < phi) + 0 
+    means = np.concatenate((np.where(switchers[0:midpoint]==1, mu2, means[0:midpoint]), np.where(switchers[midpoint:]==1, mu1, means[midpoint:])))
+    means = np.outer(means, means)
+    weights = rng.normal(loc=means, scale=0.5)
+
+    return scipy.sparse.csr_array(A.multiply(weights))
 
 def select_clusters_bernoulli(numOfClusters, q):
     '''Chooses clusters according to simple Bernoulli(q) randomized design
