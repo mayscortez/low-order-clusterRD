@@ -1,12 +1,12 @@
-Runtime (in seconds) for phi = 0 step: 0
-Runtime (in seconds) for phi = 0.05 step: 0
-Runtime (in seconds) for phi = 0.1 step: 0
-Runtime (in seconds) for phi = 0.15 step: 0
-Runtime (in seconds) for phi = 0.2 step: 0
-Runtime (in seconds) for phi = 0.25 step: 0
-Runtime (in seconds) for phi = 0.3 step: 0
-Runtime (in seconds) for phi = 0.35 step: 0
-Runtime (in seconds) for phi = 0.4 step: 0
-Runtime (in seconds) for phi = 0.45 step: 0
-Runtime (in seconds) for phi = 0.5 step: 0
-Total runtime in minutes: 1.4587095618247985
+Runtime (in seconds) for phi = 0 step: 67.2890419960022
+Runtime (in seconds) for phi = 0.05 step: 66.55114483833313
+Runtime (in seconds) for phi = 0.1 step: 66.48956799507141
+Runtime (in seconds) for phi = 0.15 step: 66.75571608543396
+Runtime (in seconds) for phi = 0.2 step: 67.18019604682922
+Runtime (in seconds) for phi = 0.25 step: 66.8005747795105
+Runtime (in seconds) for phi = 0.3 step: 66.56731390953064
+Runtime (in seconds) for phi = 0.35 step: 66.6592788696289
+Runtime (in seconds) for phi = 0.4 step: 66.88029885292053
+Runtime (in seconds) for phi = 0.45 step: 66.89844298362732
+Runtime (in seconds) for phi = 0.5 step: 66.75094294548035
+Total runtime in minutes: 12.247048266728719
