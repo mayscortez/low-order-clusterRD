@@ -32,6 +32,7 @@ def main(beta, graphNum, T, B=0.06, p=1):
 
     K = int(np.floor(B * nc / p)) # number of clusters to be in experiment if choosing via complete RD
     cluster_selection_RD = "bernoulli"     # either "complete" or "bernoulli" depending on the design used for selecting clusters
+    q_or_K = K/nc #K/nc
     
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(np.round(p,3)).replace('.','') + '_B' + str(B).replace('.','') # naming convention
     
@@ -51,7 +52,7 @@ def main(beta, graphNum, T, B=0.06, p=1):
         print("phi = {}".format(phi))
         startTime2 = time.time()
 
-        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, phi, cluster_selection_RD, K/nc, graphNum, T, graphStr))
+        results.extend(run_experiment(beta, n, nc, B, r, diag, p_in, p_out, phi, cluster_selection_RD, q_or_K, graphNum, T, graphStr))
 
         executionTime = (time.time() - startTime2)
         print('Runtime (in seconds) for phi = {} step: {}'.format(phi, executionTime),file=f)
@@ -109,7 +110,9 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         # random weights for the graph edges
         rand_wts = np.random.rand(n,3)
         alpha = rand_wts[:,0].flatten()
-        C = binary_covariate_weights(nc, A, phi)
+        C = binary_covariate_weights(nc, A, phi, sigma=0.1)
+        #C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
+        #C = covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
         
         # potential outcomes model
         fy = ppom(beta, C, alpha)
@@ -123,7 +126,7 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
         estimators_clusterRD = []
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))           # estimator only looking at [U]
-        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, q, p))  
+        estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: horvitz_thompson_new(n, nc, y, A, z, q, p))  
         estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
         estimators_clusterRD.append(lambda y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
         estimators_clusterRD.append(lambda y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
@@ -158,22 +161,19 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
             else:
                 selected = select_clusters_bernoulli(nc, q)
 
+            #print("Design: {}, # of chosen clusters: {}".format(design, len(selected)))
             selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
 
             dict_base.update({'rep': i, 'design': 'Cluster'})
 
             # Cluster Randomized Design
-            if selected_nodes:
-                Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
-                z = Z[beta,:]
-                y = fy(z)
-                sums, sums_U = outcome_sums(fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
+            Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
+            z = Z[beta,:]
+            y = fy(z)
+            sums, sums_U = outcome_sums(n, fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
             for x in range(len(estimators_clusterRD)):
-                if selected_nodes:
-                    est = estimators_clusterRD[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
-                else:
-                    est = 0
+                est = estimators_clusterRD[x](y,z,sums,H,sums_U) # have it include both the parameters for all as well as just U
                 dict_base.update({'Estimator': alg_names_clusterRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
                 # Testing for edge case
@@ -188,7 +188,7 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
             Z_bern = staggered_rollout_bern(n, P_bernRD)
             z_bern = Z_bern[beta,:]
             y_bern = fy(z)
-            sums_bern = outcome_sums(fy, Z_bern, []) #
+            sums_bern = outcome_sums(n, fy, Z_bern, range(0,n))[0]
 
             for x in range(len(estimators_bernRD)):
                 est = estimators_bernRD[x](y_bern,z_bern,sums_bern,H_bern) # have it include both the parameters for all as well as just U
