@@ -160,26 +160,27 @@ def normalized_weights(C, diag=10, offdiag=8):
 
     return C
 
-def binary_covariate_weights(nc, A, phi, mu1 = 1/2, mu2 = 2.5):
+def binary_covariate_weights(nc, A, phi, mu1 = 1/2, mu2 = 2.5, sigma = 0.5):
     ''' Returns weighted adjacency matrix, where weights depend on a binary covariate type
 
-    C[i,j] ~ Normal(mu1*mu1, 0.5) if both i and j are type 1
-    C[i,j] ~ Normal(mu2*mu2, 0.5) if both i and j are type 2
-    C[i,j] ~ Normal(mu1*mu2, 0.5) if i and j are different types
+    C[i,j] ~ Normal(mu1*mu1, sigma) if both i and j are type 1
+    C[i,j] ~ Normal(mu2*mu2, sigma) if both i and j are type 2
+    C[i,j] ~ Normal(mu1*mu2, sigma) if i and j are different types
 
     Parameters
     ----------
     nc : int
         number of clusters
+    A : scipy sparse csr array
+        adjacency matrix
+    phi : float
+        probability of switching type
     mu1 : float
 
     mu2: float
-        
-    phi : float
-        probability of switching type
-    A : scipy sparse csr array
-        adjacency matrix
 
+    sigma : float
+        scale (standard deviation) of distribution
     Returns
     ---------
     C : scipy sparse csr array
@@ -196,7 +197,7 @@ def binary_covariate_weights(nc, A, phi, mu1 = 1/2, mu2 = 2.5):
     switchers = (switchers < phi) + 0 
     means = np.concatenate((np.where(switchers[0:midpoint]==1, mu2, means[0:midpoint]), np.where(switchers[midpoint:]==1, mu1, means[midpoint:])))
     means = np.outer(means, means)
-    weights = rng.normal(loc=means, scale=0.5)
+    weights = rng.normal(loc=means, scale=sigma)
 
     return scipy.sparse.csr_array(A.multiply(weights))
 
@@ -376,28 +377,28 @@ def outcome_sums(Y, Z, selected):
   return sums, sums_U
 """
 
-def outcome_sums(Y, Z, selected):
-  '''
-  Returns the sums of the outcomes Y(z_t) for each timestep t
+def outcome_sums(n, Y, Z, selected):
+    '''
+    Returns the sums of the outcomes Y(z_t) for each timestep t
 
-  Y (function): potential outcomes model
-  Z (numpy array): treatment vectors z_t for each timestep t
-   - each row should correspond to a timestep, i.e. Z should be beta+1 by n
-  selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
-  '''
-  if selected:
-    sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0])  
-    for t in range(Z.shape[0]):
-        outcomes = Y(Z[t,:])
-        sums[t] = np.sum(outcomes)
-        sums_U[t] = np.sum(outcomes[selected])
+    Y (function): potential outcomes model
+    Z (numpy array): treatment vectors z_t for each timestep t
+    - each row should correspond to a timestep, i.e. Z should be beta+1 by n
+    selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
+    '''
+    if len(selected) == n: # if we selected all nodes, sums = sums_U
+        sums = np.zeros(Z.shape[0])
+        for t in range(Z.shape[0]):
+            outcomes = Y(Z[t,:])
+            sums[t] = np.sum(outcomes)
+        return sums, sums
+    else: 
+        sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0]) 
+        for t in range(Z.shape[0]):
+            outcomes = Y(Z[t,:])
+            sums[t] = np.sum(outcomes)
+            sums_U[t] = np.sum(outcomes[selected])
     return sums, sums_U
-  else:
-     sums = np.zeros(Z.shape[0])
-     for t in range(Z.shape[0]):
-        outcomes = Y(Z[t,:])
-        sums[t] = np.sum(outcomes)
-     return sums
 
 def graph_agnostic(n, sums, H):
     '''
@@ -516,7 +517,14 @@ def diff_in_means_naive(y, z):
     y (numpy array): observed outcomes
     z (numpy array): treatment vector
     '''
-    return y.dot(z)/np.sum(z) - y.dot(1-z)/np.sum(1-z)
+    treated = np.sum(z)
+    untreated = np.sum(1-z)
+    est = 0
+    if treated > 0:
+        est = est + y.dot(z)/treated
+    if untreated > 0:
+        est = est - y.dot(1-z)/untreated
+        return est
 
 def diff_in_means_fraction(n, y, A, z, tol):
     '''
@@ -587,20 +595,30 @@ def horvitz_thompson(n, nc, y, A, z, q, p):
 
     return 1/n * y.dot(zz)
 
-"""
-def horvitz_thompson(n, p, y, A, z, clusters=np.array([])):
-    '''
-    TODO
-    '''
-    if clusters.size == 0:
-        zz = np.prod(np.tile(z/p,(n,1)),axis=1, where=A==1) - np.prod(np.tile((1-z)/(1-p),(n,1)),axis=1, where=A==1)
-    else:
-        deg = np.sum(clusters,axis=1)
-        wt_T = np.power(p,deg)
-        wt_C = np.power(1-p,deg)
-        zz = np.multiply(np.prod(A*z,axis=1),wt_T) - np.multiply(np.prod(A*(1-z),axis=1),wt_C)
-    return 1/n * y.dot(zz)
+def horvitz_thompson_new(n, nc, y, A, z, q, p):    
+    AA = A.toarray()
 
+    cluster = []
+    for i in range(1,nc+1):
+        cluster.extend([i]*(n//nc))
+
+    cluster_neighborhoods = np.apply_along_axis(lambda x: np.bincount(x*cluster, minlength=nc+1), axis=1, arr=AA)[:,1:]
+    
+    degree = np.sum(cluster_neighborhoods, axis=1)
+    cluster_degree = np.count_nonzero(cluster_neighborhoods, axis=1)
+
+    # Probabilities of each person's neighborhood being entirely treated or entirely untreated
+    all_treated_prob = np.power(p, degree) * np.power(q, cluster_degree)
+    none_treated_prob = np.prod(np.where(cluster_neighborhoods>0,(1-q)+np.power(1-p,cluster_neighborhoods)*q,1),axis=1)
+
+    # Indicators of each person's neighborhood being entirely treated or entirely untreated
+    all_treated = np.prod(np.where(AA>0,z,1),axis=1)
+    none_treated = np.prod(np.where(AA>0,1-z,1),axis=1)
+
+    zz = np.nan_to_num(np.divide(all_treated,all_treated_prob) - np.divide(none_treated,none_treated_prob))
+
+    return 1/n * y.dot(zz)
+"""
 def hajek(n, p, y, A, z, clusters=np.array([])): 
     '''
     TODO
