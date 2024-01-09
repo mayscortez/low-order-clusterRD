@@ -14,10 +14,11 @@ probs = [[0.06, 0.25, 1/3, 2/3, 1],     # K in [50, 12, 9, 6, 3]
          [0.5, 0.625, 25/33, 25/29, 1]]#, # K in [50, 40, 33, 29, 25]
 '''
 beta = [1]
-B = [0.5]
-probs = [[1]]    
-graphNum = 15   
-T = 15
+B = [0.06]
+probs = [[1]] 
+design = "bernoulli" # complete   bernoulli
+graphNum = 5   
+T = 5
 for b in range(len(beta)):
     print('=====================================')
     print('Experiments for degree: {}'.format(b+1))
@@ -25,4 +26,4 @@ for b in range(len(beta)):
     for p in probs[b]:
         print('B = {}, p = {}'.format(B[b], p))
         print()
-        main(beta[b], graphNum, T, B[b], p)
+        main(beta[b], graphNum, T, B[b], p, design)
