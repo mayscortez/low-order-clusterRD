@@ -170,7 +170,8 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, phi, design, Eq,
 
             for x in range(len(estimators_clusterRD)):
                 if realized:
-                    est = estimators_clusterRD[x](q_real,y,z,sums,H,sums_U)
+                    bias_correction = 1 - (1-Eq)**nc
+                    est = estimators_clusterRD[x](q_real*bias_correction,y,z,sums,H,sums_U)
                 else:
                     est = estimators_clusterRD[x](Eq,y,z,sums,H,sums_U)
                 dict_base.update({'Estimator': alg_names_clusterRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
