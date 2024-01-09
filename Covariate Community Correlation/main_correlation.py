@@ -100,13 +100,13 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, graph
     edges_out_over_in = (Pij*(K-1)*unitsPercluster) / (Pii*K*unitsPercluster) # ratio of expected number of edges within cluster : outside cluster for each unit
     dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'Phi': phi, 'K': K, 'p': p, 'q': q, 'B': B, 'ratio': r, 'out-in': edges_out_over_in}
 
-    G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
-
     results = []
     for g in range(graphNum):
         graph_rep = str(g)
         dict_base.update({'Graph':graphStr+graph_rep})
 
+        G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
+        
         # random weights for the graph edges
         rand_wts = np.random.rand(n,3)
         alpha = rand_wts[:,0].flatten()

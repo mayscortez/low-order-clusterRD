@@ -107,13 +107,12 @@ def run_experiment(model, n, nc, B, Pii, Pij, phi, design, q_or_K, graphNum, T, 
 
     p = B/q
     dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'Phi': phi, 'K': K, 'p': p, 'q': q, 'B': B}
-
-    G,A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A  
     
     results = []
     for g in range(graphNum):
         graph_rep = str(g)
         dict_base.update({'Graph':graphStr+graph_rep})
+        G,A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A  
 
         # random weights for the graph edges
         rand_wts = np.random.rand(n,3)
