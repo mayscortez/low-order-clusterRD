@@ -7,13 +7,17 @@ path = os.getcwd()
 print("Path = {}".format(path))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-beta = [1,2,3]
-B = [0.06, 0.5, 0.5]
+'''
+beta = [1,2]
+B = [0.06, 0.5]
 probs = [[0.06, 0.25, 1/3, 2/3, 1],     # K in [50, 12, 9, 6, 3]
-         [0.5, 0.625, 25/33, 25/29, 1], # K in [50, 40, 33, 29, 25]
-         [0.5, 0.625, 25/33, 25/29, 1]]
-graphNum = 50   
-T = 50
+         [0.5, 0.625, 25/33, 25/29, 1]]#, # K in [50, 40, 33, 29, 25]
+'''
+beta = [1]
+B = [0.5]
+probs = [[1]]    
+graphNum = 15   
+T = 15
 for b in range(len(beta)):
     print('=====================================')
     print('Experiments for degree: {}'.format(b+1))
