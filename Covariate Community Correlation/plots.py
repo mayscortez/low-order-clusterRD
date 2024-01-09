@@ -7,29 +7,30 @@ import seaborn as sns
 import os
 pd.options.mode.chained_assignment = None  # default='warn'
 
-def main(beta=1, B=0.05, p=1): 
+def main(beta=1, B=0.05, p=1, cluster_selection = "bernoulli"): 
     graph = "SBM"
     n = 1000
     nc = 50
     p_in = 0.5 #10/(n/nc) 
-    p_out = 0 #(0.5-p_in)/49 
+    p_out = (0.5-p_in)/49
+
+    load_path = 'output/' + 'deg' + str(beta) + '/' + cluster_selection + '/'
 
     Bstr = str(np.round(B,3)).replace('.','')
     pstr = str(np.round(p,3)).replace('.','')
     
     experiment = 'correlation'
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + pstr # naming convention
-    x_label = [fixed + '_B' + Bstr + '_' + experiment]
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + pstr + '_B' + Bstr # naming convention
+    x_label = [experiment + fixed]
     x_var = ['Phi']
     x_plot = ['$\phi$']
     title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(beta, n, nc, B, np.round(p,3))]
     for ind in range(len(x_var)):
-        plot(graph,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind])
+        plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind])
 
-def plot(graph,x_var,x_label,model,x_plot,title):
-    load_path = 'output/' + 'deg' + str(model) + '/'
-    save_path = 'plots/' + 'deg' + str(model) + '/'
+def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
+    save_path = 'plots/' + 'deg' + str(model) + '/' + cluster_selection_RD + '/'
     deg_str = '_deg' + str(model)
     
     # All possible estiamtors: ['PI-$n$($p$)', 'PI-$n$($B$)', 'HT, 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
@@ -41,8 +42,8 @@ def plot(graph,x_var,x_label,model,x_plot,title):
     print(experiment+deg_str+'_'+x_var+estimators_str)
 
     # Create and save plots
-    test_str = load_path+graph+experiment+'-full-data' + deg_str+ '.csv'
-    df = pd.read_csv(load_path+graph+experiment+'-full-data' + deg_str+ '.csv')
+    full_path = load_path + experiment + deg_str + '_' + cluster_selection_RD + '-full.csv'
+    df = pd.read_csv(full_path)
     newData = df.loc[df['Estimator'].isin(estimators)]
 
     plt.rc('text', usetex=True)
@@ -63,7 +64,7 @@ def plot(graph,x_var,x_label,model,x_plot,title):
     plt.grid()
     plt.tight_layout()
 
-    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'.png')
+    plt.savefig(save_path + experiment + deg_str + '_' + cluster_selection_RD + '.png')
     plt.close()
 
     # Create and save MSE plots
@@ -79,7 +80,7 @@ def plot(graph,x_var,x_label,model,x_plot,title):
     plt.grid()
     plt.tight_layout()
 
-    plt.savefig(save_path+graph+'_'+x_var+deg_str+experiment+estimators_str+'_MSE.png')
+    plt.savefig(save_path + experiment + deg_str + '_' + cluster_selection_RD + '_MSE.png')
     plt.close()
 
 if __name__ == "__main__":
@@ -91,8 +92,9 @@ if __name__ == "__main__":
             [0.5, 0.625, 25/33, 25/29, 1],] # K in [50, 40, 33, 29, 25]
     '''
     beta = [1]
-    B = [0.5]
+    B = [0.06]
     probs = [[1]]
+    design = "complete"  # bernoulli   complete
 for b in range(len(beta)):
     print('Plotting degree: {}'.format(b+1))
     for p in probs[b]:
