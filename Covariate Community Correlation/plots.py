@@ -7,7 +7,7 @@ import seaborn as sns
 import os
 pd.options.mode.chained_assignment = None  # default='warn'
 
-def main(beta=1, B=0.05, p=1, cluster_selection = "bernoulli"): 
+def main(beta=1, B=0.06, p=1, cluster_selection = "bernoulli"): 
     graph = "SBM"
     n = 1000
     nc = 50
@@ -33,10 +33,10 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
     save_path = 'plots/' + 'deg' + str(model) + '/' + cluster_selection_RD + '/'
     deg_str = '_deg' + str(model)
     
-    # All possible estiamtors: ['PI-$n$($p$)', 'PI-$n$($B$)', 'HT, 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    # All possible estiamtors: ['PI-$n$($p$)', 'PI-$n$($B$)', 'HT', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # All possible designs: ['Cluster', 'Bernoulli'] - note that this only matters for 'LS-Prop', 'LS-Num','DM', and 'DM($0.75$)'
-    estimators = ['PI-$n$($p$)', 'PI-$n$($B$)', 'PI-$\mathcal{U}$($p$)'] 
-    estimators_str = '_nU' # other options: 'n', 'U', 'all', 'nUHT' -- basically, which estimators show up in the plots
+    estimators = ['PI-$n$($p$)', 'PI-$n$($B$)'] 
+    estimators_str = '_n' # other options: 'n', 'U', 'all', 'nUHT' -- basically, which estimators show up in the plots
 
     experiment = x_label
     print(experiment+deg_str+'_'+x_var+estimators_str)
@@ -60,7 +60,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
     ax.set_ylabel("Relative Bias", fontsize = 18)
     ax.set_title(title, fontsize=18)
     handles, labels = ax.get_legend_handles_labels()
-    ax.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+    ax.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
     plt.grid()
     plt.tight_layout()
 
@@ -76,7 +76,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
     ax2.set_ylabel("MSE", fontsize = 18)
     ax2.set_title(title, fontsize=20)
     handles, labels = ax2.get_legend_handles_labels()
-    ax2.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+    ax2.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
     plt.grid()
     plt.tight_layout()
 
@@ -91,12 +91,12 @@ if __name__ == "__main__":
     probs = [[0.06, 0.25, 1/3, 2/3, 1],    # K in [50, 12, 9, 6, 3] #[0.06, 0.25, 1/3, 2/3, 1]
             [0.5, 0.625, 25/33, 25/29, 1],] # K in [50, 40, 33, 29, 25]
     '''
-    beta = [1]
-    B = [0.06]
-    probs = [[1]]
+    beta = [1,2]
+    B = [0.06,0.06]
+    probs = [[0.06, 0.25, 1/3, 2/3, 1], [0.06, 0.25, 1/3, 2/3, 1]] 
     design = "complete"  # bernoulli   complete
 for b in range(len(beta)):
-    print('Plotting degree: {}'.format(b+1))
+    print('Plotting degree: {} ({} design)'.format(b+1, design))
     for p in probs[b]:
         print()
-        main(beta[b], B[b], p)
+        main(beta[b], B[b], p, cluster_selection=design)
