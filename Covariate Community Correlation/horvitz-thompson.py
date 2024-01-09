@@ -112,7 +112,7 @@ def run_experiment(beta, n, nc, B, r, diag, Pii, Pij, phi, design, q_or_K, T):
         z = Z[beta,:]
         y = fy(z)
 
-        TTE_ht[i] = horvitz_thompson(n, nc, y, A, z, q, p)
+        TTE_ht[i] = exFun.horvitz_thompson_new(n, nc, y, A, z, q, p)
 
     print("H-T: {}".format(np.sum(TTE_ht)/T))
     print("H-T relative bias: {}".format(((np.sum(TTE_ht)/T)-TTE)/TTE)) #(est-TTE)/TTE ((np.sum(TTE_ht)/T)-TTE)/TTE
