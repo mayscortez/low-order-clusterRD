@@ -14,7 +14,7 @@ def main(model, B=0.06, p_in=0.5, p_out=0, p=0, cluster_selection = "bernoulli",
     n = 1000
     nc = 50
 
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_phi' + str(phi).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','') # naming convention
     
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['Phi']
