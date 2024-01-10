@@ -5,9 +5,9 @@ import scipy.sparse
 
 # Scale the effects of higher order terms
 a1 = 1   # for linear effects
-a2 = 1   # for quadratic effects
-a3 = 1   # for cubic effects
-a4 = 1   # for quartic effects
+a2 = 8   # for quadratic effects
+a3 = 12   # for cubic effects
+a4 = 16   # for quartic effects
 
 # Define f(z)
 f_linear = lambda alpha, z, gz: alpha + a1*z

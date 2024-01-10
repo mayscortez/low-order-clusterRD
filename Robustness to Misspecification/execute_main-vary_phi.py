@@ -7,12 +7,17 @@ print("Path = {}".format(path))
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 '''
-Piis = [0.5, 0.01]
-Pijs = [0, 0.01] 
-'''
 models = [{'type': 'ppom', 'degree':1, 'name':'ppom1', 'params': []},
             {'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
-            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []}]
+            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
+            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
+Piis = [0.5, 0.01]
+Pijs = [0, 0.01]
+probs = [0.06, 0.12, 0.25, 1/3, 2/3, 1]
+'''
+models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
+            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
+            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
 B = 0.06
 Piis = [0.5, 0.01]
 Pijs = [0, 0.01]  
