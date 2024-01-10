@@ -94,7 +94,7 @@ if __name__ == "__main__":
     beta = [1,2]
     B = [0.06,0.06]
     probs = [[0.06, 0.25, 1/3, 2/3, 1], [0.06, 0.25, 1/3, 2/3, 1]] 
-    design = "complete"  # bernoulli   complete
+    design = "bernoulli"  # bernoulli   complete
 for b in range(len(beta)):
     print('Plotting degree: {} ({} design)'.format(b+1, design))
     for p in probs[b]:
