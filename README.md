@@ -9,11 +9,15 @@ The folder **Covariate Community** Correlation has the files related to the expe
 - `plots` is a folder containing the resulting plots from `plots.py` (there is a seperate folder for each model degee)
     - folder structure is the same as output
 
+
 The folder **Robustness to Misspecification** has the files related to the experiments that compare the performance of different estimators and designs under model misspecification.
 - `main_vary_p.py` fixes all parameters except the treatment probability within clusters $p$, and computes different, possibly misspecifed, estimators
     - the idea is to compare the robustness of the different designs+estimators as we reduce or increase the extrapolation error
 - `execute_main-vary_p.py` is the file to actually run the experiment that varies $p$
-- `experiment_functions.py` is a file that contains helper/other functions for the experiment e.g. to run the staggered rollout or select clusters or create the network--note this is essentially the same file as `experiment_functions.py` above, but with some name changes inside the file
+- `main_vary_phi.py` fixes all parameters except the balance (w.r.t. covariates) level $\phi$, and computes different, possibly misspecifed, estimators
+    - When $\phi=0$, there is high/perfect homophily. When $\phi=0.5$ there is no homophily. The idea is to compare the robustness of the different designs+estimators as we reduce or increase the stregnth of the homophily
+- `execute_main-vary_phi.py` is the file to actually run the experiment that varies $\phi$
+- `experiment_functions.py` is a file that contains helper/other functions for the experiment e.g. to run the staggered rollout or select clusters or create the network--note this is essentially the same file as the file above, but with some name changes inside the file
 - `plots_rm_vary_p.py` is a script that plots the output from the experiment `main_vary_p`
 - `plots_rm_vary_phi.py` is a script that plots the output from the experiment `main_vary_phi`
 - `output` is a folder containing the results from the experiments
@@ -23,10 +27,14 @@ The folder **Robustness to Misspecification** has the files related to the exper
 - `plots` is a folder containing the resulting plots from `plots.py`
     - folder structure is the same as `output`
 
+
 The folder **Increasing Edges** has the files related to the experiment varying the cluster quality with respect to edges crossing clusters.
 - `main_increasing_edges.py` is the experiment (fix all parameters, but vary $p_\text{in}$ and $p_\text{out}$, keeping average degree fixed, and compute different estimators)
 - `execute_main.py` is the file to actually run the experiment (or several)
-- `myFunctions_edges.py` is a file that contains helper/other functions for the experiment e.g. to run the staggered rollout or select clusters or create the network--note this is essentially the same file as `experiment_functions.py` above
+- `myFunctions_edges.py` is a file that contains helper/other functions for the experiment e.g. to run the staggered rollout or select clusters or create the network; yes, essentially same file as the corresponding two with the same function in the other folders
 - `plots.py` is a script that plots the output from the experiment
 - `output` is a folder containing the results from the experiments (there is a seperate folder for each model degee)
 - `plots` is a folder containing the resulting plots from `plots.py`(there is a seperate folder for each model degee)
+
+
+Ignore the folder `Lattice_experiments` and the folders `old-code`, `outputFiles`, and `plots` that are in the main file directory.
