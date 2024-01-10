@@ -417,7 +417,10 @@ def PI(n, sums, H):
     H (numpy array): PPOM coefficients h_t or l_t
     sums (numpy array): sums of outcomes at each time step
     '''
-    return (1/n)*H.dot(sums)
+    if n > 0:
+        return (1/n)*H.dot(sums)
+    else:
+        return 0
 
 def poly_interp_splines(n, P, sums, spltyp = 'quadratic'):
   '''
