@@ -37,7 +37,8 @@ def plot(x_var, x_label, model, x_plot, title, fixed_param_name, fixed_param_val
     # Possible estimators: 
         # names_ClRD = ['HT', 'PI-$n(p;1)$', 'PI-$\mathcal{U}(p;1)$', 'LS-PropC(1)', 'LS-NumC(1)', 'PI-$n(p;2)$', 'PI-$\mathcal{U}(p;2)$', 'LS-PropC(2)', 'LS-NumC(2)','PI-$n(p;3)$', 'PI-$\mathcal{U}(p;3)$', 'LS-PropC(3)', 'LS-NumC(3)']
         # names_BRD = ['PI-$n(B;1)$', 'LS-PropB(1)', 'LS-NumB(1)', 'PI-$n(B;2)$', 'LS-PropB(2)', 'LS-NumB(2)', 'PI-$n(B;3)$', 'LS-PropB(3)', 'LS-NumB(3)','DM', 'DM($0.75$)']
-    estimators = ['PI-$\mathcal{U}(p;1)$','PI-$\mathcal{U}(p;2)$','PI-$\mathcal{U}(p;3)$', 'PI-$n(B;1)$'] 
+    #estimators = ['HT', 'PI-$\mathcal{U}(p;1)$', 'PI-$n(B;1)$', 'LS-PropB(1)', 'DM($0.75$)', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$'] 
+    estimators = ['HT', 'PI-$\mathcal{U}(p;1)$', 'PI-$n(B;1)$', 'LS-PropB(1)', 'DM($0.75$)'] 
 
     experiment = x_label
     print('\n'+experiment+'_'+'vary-'+x_var)
@@ -61,11 +62,11 @@ def plot(x_var, x_label, model, x_plot, title, fixed_param_name, fixed_param_val
         #ax.set_xlim(0,0.001)
         ax.set_xlabel(x_plot, fontsize = 18)
         if fixed_param_name == 'Phi':
-            ax.set_ylim(-10,20)
+            ax.set_ylim(-1,2)
         ax.set_ylabel("MSE", fontsize = 18)
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+        ax.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
         plt.grid()
         plt.tight_layout()
 
@@ -85,11 +86,11 @@ def plot(x_var, x_label, model, x_plot, title, fixed_param_name, fixed_param_val
         #ax.set_xlim(0,0.001)
         ax.set_xlabel(x_plot, fontsize = 18)
         if fixed_param_name == 'Phi':
-            ax.set_ylim(-10,20)
+            ax.set_ylim(-1,2)
         ax.set_ylabel("Relative Bias", fontsize = 18)
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+        ax.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
         plt.grid()
         plt.tight_layout()
 
@@ -106,13 +107,13 @@ if __name__ == "__main__":
             {'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
             {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []}]
     B = 0.06
-    Piis = [0.5, 0.01]
-    Pijs = [0, 0.01]
+    Piis = [0.5]
+    Pijs = [0]
     phi = 0
     p = 1  
 
 for i in range(len(models)):
     print('Plotting for true model: {}'.format(models[i]['name']))
     for j in range(len(Piis)):
-        main(models[i], B, Piis[j], Pijs[j], phi, p, 'MSE')
+        main(models[i], B, Piis[j], Pijs[j], phi, p, 'both')
     print() 
