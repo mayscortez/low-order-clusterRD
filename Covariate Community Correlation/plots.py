@@ -1,11 +1,9 @@
 # plots
-from matplotlib import rcParams
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
-pd.options.mode.chained_assignment = None  # default='warn'
 
 def main(beta=1, B=0.06, p=1, cluster_selection = "bernoulli"): 
     graph = "SBM"
@@ -25,7 +23,7 @@ def main(beta=1, B=0.06, p=1, cluster_selection = "bernoulli"):
     x_label = [experiment + fixed]
     x_var = ['Phi']
     x_plot = ['$\phi$']
-    title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(beta, n, nc, B, np.round(p,3))]
+    title = ['$\\beta={}, SBM({},{},{},{}), B={}, p={}$'.format(beta, n, nc, p_in, p_out, B, np.round(p,3))]
     for ind in range(len(x_var)):
         plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind])
 
@@ -35,7 +33,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
     
     # All possible estiamtors: ['PI-$n$($p$)', 'PI-$n$($B$)', 'HT', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # All possible designs: ['Cluster', 'Bernoulli'] - note that this only matters for 'LS-Prop', 'LS-Num','DM', and 'DM($0.75$)'
-    estimators = ['PI-$n$($p$)', 'PI-$n$($B$)'] 
+    estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop', 'DM','DM($0.75$)'] 
     estimators_str = '_n' # other options: 'n', 'U', 'all', 'nUHT' -- basically, which estimators show up in the plots
 
     experiment = x_label
@@ -52,7 +50,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
     fig = plt.figure()
     ax = fig.add_subplot(111)
 
-    sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', data=newData, errorbar='sd', legend='brief', markers=True)
+    sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', data=newData, errorbar='sd', legend='brief', markers=True, palette=color_pal)
 
     #ax.set_xlim(0,0.001)
     ax.set_xlabel(x_plot, fontsize = 18)
@@ -70,8 +68,9 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
     # Create and save MSE plots
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111)
-    sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True)
+    sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True, palette=color_pal)
 
+    ax2.set_ylim(-1,10)
     ax2.set_xlabel(x_plot, fontsize = 18)
     ax2.set_ylabel("MSE", fontsize = 18)
     ax2.set_title(title, fontsize=20)
@@ -90,13 +89,14 @@ if __name__ == "__main__":
     B = [0.06, 0.5]
     probs = [[0.06, 0.25, 1/3, 2/3, 1],    # K in [50, 12, 9, 6, 3] #[0.06, 0.25, 1/3, 2/3, 1]
             [0.5, 0.625, 25/33, 25/29, 1],] # K in [50, 40, 33, 29, 25]
+            [0.02, 0.1, 0.2, 0.3, 1]
     '''
-    beta = [1,2]
-    B = [0.06,0.06]
-    probs = [[0.06, 0.25, 1/3, 2/3, 1], [0.06, 0.25, 1/3, 2/3, 1]] 
+    beta = [2,2]
+    B = [0.02,0.06] 
+    probs = [[0.02], [0.06]]
     design = "bernoulli"  # bernoulli   complete
 for b in range(len(beta)):
-    print('Plotting degree: {} ({} design)'.format(b+1, design))
+    print('Plotting degree: {} ({} design)'.format(beta[b], design))
     for p in probs[b]:
         print()
         main(beta[b], B[b], p, cluster_selection=design)
