@@ -12,7 +12,7 @@ from experiment_functions import *
 import pickle
 import sys
 
-def main(beta, graphNum, T, B=0.06, p=1, cluster_selection_RD = "bernoulli"):
+def main(beta, graphNum, T, B=0.06, p=1, p_in=0.5, cluster_selection_RD = "bernoulli"):
     '''
     beta (int): degree of the model
     graphNum (int): how many graph models to average over
@@ -28,7 +28,6 @@ def main(beta, graphNum, T, B=0.06, p=1, cluster_selection_RD = "bernoulli"):
     graphStr = "SBM"          # stochastic block model    
     n = 1000                  # number of nodes
     nc = 50                   # number of communities
-    p_in = 0.5                # edge probability within communities
     p_out = (0.5-p_in)/49     # edge probability between different communities, this way keeps expected degree constant at 10
 
     K_expected = int(B * nc / p)   # if complete design, this is actual number of chosen clusters; if Bernoulli this is expected number of chosen clusters

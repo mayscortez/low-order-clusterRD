@@ -18,6 +18,7 @@ beta = [1,2]
 B = [0.06, 0.06] 
 probs = [[0.06, 0.25, 1/3, 2/3, 1], [0.06, 0.25, 1/3, 2/3, 1]]
 designs = ["complete"] # complete   bernoulli
+p_in = 0.5
 graphNum = 30  
 T = 30
 for d in designs:
@@ -28,4 +29,4 @@ for d in designs:
         for p in probs[b]:
             print('B = {}, p = {}'.format(B[b], p))
             print()
-            main(beta[b], graphNum, T, B[b], p, d)
+            main(beta[b], graphNum, T, B[b], p, p_in, d)
