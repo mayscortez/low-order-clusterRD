@@ -97,12 +97,10 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, phi, design, Eq,
     estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
     estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))           # estimator only looking at [U]
     estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: horvitz_thompson_new(n, nc, y, A, z, Eq, target_p))  
-    estimators_clusterRD.append(lambda q,y,z, sums, H_m,sums_U: poly_regression_prop(beta, y,A,z))      # polynomial regression
-    estimators_clusterRD.append(lambda q,y,z, sums, H_m,sums_U: poly_regression_num(beta, y,A,z))
     estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
     estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
-    alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)']
 
     # Bernoulli Randomized Design Estimators
     estimators_bernRD = []

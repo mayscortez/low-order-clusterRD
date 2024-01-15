@@ -5,11 +5,9 @@ import numpy as np
 import seaborn as sns
 import os
 
-def main(beta=1, B=0.06, p=1, cluster_selection = "bernoulli"): 
-    graph = "SBM"
+def main(beta=1, B=0.06, p=1, p_in = 0.5, cluster_selection = "bernoulli", estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop', 'DM','DM($0.75$)'] ): 
     n = 1000
     nc = 50
-    p_in = 0.5 #10/(n/nc) 
     p_out = (0.5-p_in)/49
 
     load_path = 'output/' + 'deg' + str(beta) + '/' + cluster_selection + '/'
@@ -25,19 +23,26 @@ def main(beta=1, B=0.06, p=1, cluster_selection = "bernoulli"):
     x_plot = ['$\phi$']
     title = ['$\\beta={}, SBM({},{},{},{}), B={}, p={}$'.format(beta, n, nc, p_in, p_out, B, np.round(p,3))]
     for ind in range(len(x_var)):
-        plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind])
+        plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind],estimators)
 
-def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title):
+def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimators):
     save_path = 'plots/' + 'deg' + str(model) + '/' + cluster_selection_RD + '/'
     deg_str = '_deg' + str(model)
     
-    # All possible estiamtors: ['PI-$n$($p$)', 'PI-$n$($B$)', 'HT', 'PI-$\mathcal{U}$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
-    # All possible designs: ['Cluster', 'Bernoulli'] - note that this only matters for 'LS-Prop', 'LS-Num','DM', and 'DM($0.75$)'
-    estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop', 'DM','DM($0.75$)'] 
-    estimators_str = '_n' # other options: 'n', 'U', 'all', 'nUHT' -- basically, which estimators show up in the plots
-
+    color_map = {'PI-$n$($p$)': '#2596be', 
+                 'PI-$\mathcal{U}$($p$)': '#1b45a6',
+                 'HT': '#e51e31', 
+                 'DM-C': '#fb5082', 
+                 'DM-C($0.75$)': '#ff7787',
+                 'PI-$n$($B$)': '#ff7f0e',
+                 'LS-Prop': '#2ca02c',
+                 'LS-Num': '#9467bd',
+                 'DM': '#2ca02c',
+                 'DM($0.75$)':'#7f7f7f'}
+    color_pal = [color_map[est] for est in estimators]
+    
     experiment = x_label
-    print(experiment+deg_str+'_'+x_var+estimators_str)
+    print(experiment+deg_str+'_'+x_var)
 
     # Create and save plots
     full_path = load_path + experiment + deg_str + '_' + cluster_selection_RD + '-full.csv'
@@ -86,17 +91,23 @@ if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     ''' 
     beta = [1,2]
-    B = [0.06, 0.5]
-    probs = [[0.06, 0.25, 1/3, 2/3, 1],    # K in [50, 12, 9, 6, 3] #[0.06, 0.25, 1/3, 2/3, 1]
-            [0.5, 0.625, 25/33, 25/29, 1],] # K in [50, 40, 33, 29, 25]
-            [0.02, 0.1, 0.2, 0.3, 1]
+    B = [0.06, 0.5, 0.02]
+    probs = [[0.06, 0.25, 1/3, 2/3, 1],    # K in [50, 12, 9, 6, 3] 
+            [0.5, 0.625, 25/33, 25/29, 1], # K in [50, 40, 33, 29, 25]
+            [0.02, 0.1, 0.2, 0.5, 1]]      # K in [50, 10, 5, 2, 1]
     '''
-    beta = [2,2]
-    B = [0.02,0.06] 
-    probs = [[0.02], [0.06]]
+    beta = [2]
+    B = [0.06] 
+    probs = [[0.06]]
+    p_in = 0.5
     design = "bernoulli"  # bernoulli   complete
-for b in range(len(beta)):
-    print('Plotting degree: {} ({} design)'.format(beta[b], design))
-    for p in probs[b]:
-        print()
-        main(beta[b], B[b], p, cluster_selection=design)
+    
+    # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
+    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)' 'PI-$n$($B$)', 'LS-Prop', 'LS-Num']
+    
+    for b in range(len(beta)):
+        print('Plotting degree: {} ({} design)'.format(beta[b], design))
+        for p in probs[b]:
+            print()
+            main(beta[b], B[b], p, p_in, design, estimators)
