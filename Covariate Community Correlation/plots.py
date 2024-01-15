@@ -104,7 +104,7 @@ if __name__ == "__main__":
     
     # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)' 'PI-$n$($B$)', 'LS-Prop', 'LS-Num']
+    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num']
     
     for b in range(len(beta)):
         print('Plotting degree: {} ({} design)'.format(beta[b], design))
