@@ -50,7 +50,7 @@ Suppose you choose the parameters for `execute_main.py`:
 - `graphNum = 30`
 - `T = 30`
 
-This runs 5 experiments for a degree $\beta=1$ model and 5 experiments for a degree $\beta-2$ model. Each averages over 30 SBMs, where $p_\text{in}=0.01=p_\text{out} (aka Erdos-Renyi graphs), and 30 treatment samples per graph. The degree $\beta=1$ experiments all have a treatment budget of $B=0.06$, but each corresponds to a different treatment probability $p \in \{0.06, 0.25, 1/3, 2/3, 1\}$. Note this corresponds to choosing $K=50, 12, 9, 6, 3$ clusters out of $50$, respectively. The degree $\beta=2$ experiments all have a treatment budget of $B=0.5$, but each corresponds to a different treatment probability $p \in \{0.5, 0.625, 25/33, 25/29, 1\}$. Note this corresponds to choosing $K=50, 40, 33, 29, 25$ clusters out of $50$, respectively. 
+This runs 5 experiments for a degree $\beta=1$ model and 5 experiments for a degree $\beta-2$ model. Each averages over 30 SBMs, where $p_\text{in}=0.01=p_\text{out}$ (aka Erdos-Renyi graphs), and 30 treatment samples per graph. The degree $\beta=1$ experiments all have a treatment budget of $B=0.06$, but each corresponds to a different treatment probability $p \in \{0.06, 0.25, 1/3, 2/3, 1\}$. Note this corresponds to choosing $K=50, 12, 9, 6, 3$ clusters out of $50$, respectively. The degree $\beta=2$ experiments all have a treatment budget of $B=0.5$, but each corresponds to a different treatment probability $p \in \{0.5, 0.625, 25/33, 25/29, 1\}$. Note this corresponds to choosing $K=50, 40, 33, 29, 25$ clusters out of $50$, respectively. 
 
 ### Plotting Results
 The script `plots.py` plots the output from the experiment in `main_correlation.py`
