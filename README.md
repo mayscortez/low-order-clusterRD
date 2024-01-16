@@ -26,11 +26,11 @@ To run an experiment and save the output, visit the file `execute_main.py`. The 
 - `graphNum`: int - the number of graphs to average over in the experiment
 - `T`: int - the number of treatment samples to average over per graph
 
-Note that there should be the same number of elements in `beta`, `B`, and `probs`. When running multiple experiments back to back, the $i$th element of `beta` corresponds to the `i`th element of `B` and `probs`.
+Note that there should be the same number of elements in `beta`, `B`, and `probs`. When running multiple experiments back to back, the $i$-th element of `beta` corresponds to the $i$-th element of `B` and `probs`.
 
 **Naming Convention**
 
-There are two outputs per experiment: a text file that records how long the experiment took and a csv file recording the results from the experiment. Each file is prefixed with `correlation_n1000_nc50_` denoting that this is the correlation experiment on a graph with $n=1000$ nodes and $n_c=50$ clusters. The next part of the string conatins information about $p_\text{in}, p_\text{out}, p, B, \beta$ and the design for choosing clusters. Lastly, the csv files end with the suffix `-full.csv` while the text files simply end with `.txt`. For example, `correlation_n1000_nc50_in05_out00_p1_B006_deg1_bernoulli` means $p_\text{in}=0.5, p_\text{out}=0.0, p=1, B=0.06, \beta=1$. Note that decimals are removed from the probabilities, so $0.06$ becomes `006` and $0.6$ becomes `06`.
+There are two outputs per experiment: a text file that records how long the experiment took and a csv file recording the results from the experiment. Each file is prefixed with `correlation_n1000_nc50_` denoting that this is the correlation experiment on a graph with $n=1000$ nodes and $n_c=50$ clusters. The next part of the string conatins information about $p_\text{in}, p_\text{out}, p, B, \beta$ and the design for choosing clusters. Lastly, the csv files end with the suffix `-full.csv` while the text files simply end with `.txt`. For example, `correlation_n1000_nc50_in05_out00_p1_B006_deg1_bernoulli` means $p_\text{in}=0.5, p_\text{out}=0.0, p=1, B=0.06, \beta=1$ and clusters are chosen accorrding to Benroulli design. Note that decimals are removed from the probabilities, so $0.06$ becomes `006` and $0.6$ becomes `06`.
 
 **Example: Run a Single Experiment**
 
@@ -142,6 +142,13 @@ Suppose you want to run these experiments where the true models are polynomials 
 In this experiment, we fix the true model and vary the covariate balance/homphily level within chosen clusters $\phi$ from $\phi=0$ to $\phi=0.5$ and compute the relative bias, absolute bias, and MSE of different estimators assuming misspecified models.
 
 To run an experiment and save the output, visit the file `execute_main-vary_phi.py`. Instructions are very similar to the ones for `execute_main-vary_phi.py` but instead of the parameter `phis` we use the parameter `probs`, a list of treatment probabilites you want to run the experiment for.
+
+## Naming Convention
+
+There are two outputs per experiment: a text file that records how long the experiment took and a csv file recording the results from the experiment. File format is `<experiment name>-<true model name>` followed by `_n1000_nc50_in<within cluster edge probability>_out<across cluster edge probability>_B<treatment budget>_` followed by either `phi<value of phi>_<design for choosing clusters>` or `p<value of p>_<design for choosing clusters>` depending on the experiment. Lastly, the csv files end with the suffix `-full.csv` while the text files simply end with `.txt`. 
+
+For example, `vary_p-ppom1_n1000_nc50_in001_out001_B006_phi0_bernoulli` means this is output for the experiment where we vary $p$, the true underlying model is ppom1 (polynomial with degree $\beta=1$, i.e. linear), $p_\text{in}=0.01, p_\text{out}=0.01,  B=0.06, \phi=0$, and Bernoulli choice of clusters.
+As another example, `vary_phi-ppom3_n1000_nc50_in05_out0_B006_p006_bernoulli-full` means this is output for the experiment where we vary $\phi$, the true underlying model is ppom3 (polynomial with degree $\beta=3$), $p_\text{in}=0.5, p_\text{out}=0,  B=0.06, p=0.06$, and Bernoulli choice of clusters.
 
 ### Plotting Results
 `plots_rm_vary_p.py` is a script that plots the output from the experiment `main_vary_p`. 
