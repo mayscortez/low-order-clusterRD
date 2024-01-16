@@ -109,7 +109,7 @@ This folder has the files for the experiments comparing the performance of diffe
 ### Running Robustness to Misspecification Experiments
 In each experiment, a *true* model is fixed. As we vary *either* the treatment probability for chosen clusteres $p$ or the covariate balance/homophily level $\phi$, we compute estimates for the TTE with various estimators, most assuming a misspecified model. The idea is to compare the performance of different estimators under misspecified models to better understand when some perform better than others.
 
-## Varying treatment probability $p$
+### Varying treatment probability $p$
 In this experiment, we fix the true model and vary the treatment probability within chosen clusters $p$ from $p=B$ to $p=1$ and compute the relative bias, absolute bias, and MSE of different estimators assuming misspecified models. 
 
 To run an experiment and save the output, visit the file `execute_main-vary_p.py`. The file is capable of running several experiments back to back, saving the corresponding output in the corresponding folders. The 7 parameters determining the details of the experiment are listed and explained below:
@@ -138,12 +138,12 @@ Suppose you want to run these experiments where the true models are polynomials 
 - `graphNum = 30` 
 - `T = 30`
 
-## Varying balance/homophily $\phi$
+### Varying balance/homophily $\phi$
 In this experiment, we fix the true model and vary the covariate balance/homphily level within chosen clusters $\phi$ from $\phi=0$ to $\phi=0.5$ and compute the relative bias, absolute bias, and MSE of different estimators assuming misspecified models.
 
 To run an experiment and save the output, visit the file `execute_main-vary_phi.py`. Instructions are very similar to the ones for `execute_main-vary_phi.py` but instead of the parameter `phis` we use the parameter `probs`, a list of treatment probabilites you want to run the experiment for.
 
-## Naming Convention
+### Naming Convention
 
 There are two outputs per experiment: a text file that records how long the experiment took and a csv file recording the results from the experiment. File format is `<experiment name>-<true model name>` followed by `_n1000_nc50_in<within cluster edge probability>_out<across cluster edge probability>_B<treatment budget>_` followed by either `phi<value of phi>_<design for choosing clusters>` or `p<value of p>_<design for choosing clusters>` depending on the experiment. Lastly, the csv files end with the suffix `-full.csv` while the text files simply end with `.txt`. 
 
