@@ -20,7 +20,6 @@ models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
             {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
 B = 0.06
 Piis = [0.5]
-Pijs = [0]  
 phis = [0,0.5]
 design = "bernoulli"  # bernoulli   complete
 graphNum = 30 
@@ -38,4 +37,4 @@ for i in range(len(models)):
         for phi in phis:
             print('phi = {}'.format(phi))
             print('--------------------------------------------')
-            main(models[i], graphNum, T, B, phi, Piis[j], Pijs[j], design)
+            main(models[i], graphNum, T, B, phi, Piis[j], design)

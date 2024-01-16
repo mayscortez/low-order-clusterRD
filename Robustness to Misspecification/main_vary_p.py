@@ -8,7 +8,7 @@ import pandas as pd
 import time
 from experiment_functions import *
 
-def main(model, graphNum, T, B=0.06, phi=0, p_in = 0.5, p_out = 0, cluster_selection = "bernoulli"):
+def main(model, graphNum, T, B=0.06, phi=0, p_in = 0.5, cluster_selection = "bernoulli"):
     '''
     model (dict) 
         key: 'type', value: a string denoting with model to use (e.g. 'ppom' for polynomial)
@@ -27,6 +27,7 @@ def main(model, graphNum, T, B=0.06, phi=0, p_in = 0.5, p_out = 0, cluster_selec
     model_name = model['name']   
     save_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/'              
     
+    p_out = (0.5-p_in)/49
     if p_in != p_out:
         graphStr = "SBM"    # stochastic block model    
     else:
