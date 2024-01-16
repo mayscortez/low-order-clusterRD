@@ -128,31 +128,6 @@ def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.
 
     return C
 
-def normalized_weights(C, diag=10, offdiag=8):
-    '''
-    Returns normalized weights (or normalized weighted adjacency matrix) as numpy array
-
-    C (square numpy array): weight matrix (or weighted adjacency matrix)
-    diag (float): controls the magnitude of the diagonal elements
-    offdiag (float): controls the magnitude of the off-diagonal elements
-    '''
-    n = C.shape[0]
-
-    # diagonal elements
-    C_diag = np.ones(n) * diag * np.random.rand(n)
-
-    # remove diagonal elements and normalize off-diagonal elements
-    # normalizes each column by the norm of the column (not including the diagonal element)
-    np.fill_diagonal(C, 0)
-    col_norms = np.linalg.norm(C, axis=0, ord=1)
-    col_norms = np.where(col_norms != 0, col_norms, col_norms+1)
-    C = (C / col_norms) * offdiag * np.random.rand(n)
-
-    # add back the diagonal
-    C += np.diag(C_diag)
-
-    return C
-
 def select_clusters_bernoulli(numOfClusters, q):
     '''
     Assumes clusters are labeled 0,1,2,...,numOfClusters-1 and randomly chooses clusters according to a Bernoulli(q) design
@@ -315,30 +290,30 @@ def seq_treatment_probs(beta, p):
   P = np.fromfunction(fun, shape=(beta+1,))
   return P
 
-def outcome_sums(Y, Z, selected):
-  '''
-  Returns the sums of the outcomes Y(z_t) for each timestep t
+def outcome_sums(n, Y, Z, selected):
+    '''
+    Returns the sums of the outcomes Y(z_t) for each timestep t
 
-  Y (function): potential outcomes model
-  Z (numpy array): treatment vectors z_t for each timestep t
-   - each row should correspond to a timestep, i.e. Z should be beta+1 by n
-  selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
-  '''
-  if selected:
-    sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0])  
-    for t in range(Z.shape[0]):
-        outcomes = Y(Z[t,:])
-        sums[t] = np.sum(outcomes)
-        sums_U[t] = np.sum(outcomes[selected])
+    Y (function): potential outcomes model
+    Z (numpy array): treatment vectors z_t for each timestep t
+    - each row should correspond to a timestep, i.e. Z should be beta+1 by n
+    selected (list): indices of units in the population selected to be part of the experiment (i.e in U)
+    '''
+    if len(selected) == n: # if we selected all nodes, sums = sums_U
+        sums = np.zeros(Z.shape[0])
+        for t in range(Z.shape[0]):
+            outcomes = Y(Z[t,:])
+            sums[t] = np.sum(outcomes)
+        return sums, sums
+    else: 
+        sums, sums_U = np.zeros(Z.shape[0]), np.zeros(Z.shape[0]) 
+        for t in range(Z.shape[0]):
+            outcomes = Y(Z[t,:])
+            sums[t] = np.sum(outcomes)
+            sums_U[t] = np.sum(outcomes[selected])
     return sums, sums_U
-  else:
-     sums = np.zeros(Z.shape[0])
-     for t in range(Z.shape[0]):
-        outcomes = Y(Z[t,:])
-        sums[t] = np.sum(outcomes)
-     return sums
 
-def graph_agnostic(n, sums, H):
+def PI(n, sums, H):
     '''
     Returns an estimate of the TTE with (beta+1) staggered rollout design
 
@@ -346,7 +321,10 @@ def graph_agnostic(n, sums, H):
     H (numpy array): PPOM coefficients h_t or l_t
     sums (numpy array): sums of outcomes at each time step
     '''
-    return (1/n)*H.dot(sums)
+    if n > 0:
+        return (1/n)*H.dot(sums)
+    else:
+        return 0
 
 def poly_interp_splines(n, P, sums, spltyp = 'quadratic'):
   '''
@@ -383,7 +361,7 @@ def poly_interp_linear(n, P, sums):
   return TTE_hat2
 
 
-def poly_regression_prop(beta, y, A, z):
+def poly_LS_prop(beta, y, A, z):
   '''
   Returns an estimate of the TTE using polynomial regression using
   numpy.linalg.lstsq
@@ -410,7 +388,7 @@ def poly_regression_prop(beta, y, A, z):
   v = np.linalg.lstsq(X,y,rcond=None)[0]
   return np.sum(v)-v[0]
 
-def poly_regression_num(beta, y, A, z):
+def poly_LS_num(beta, y, A, z):
   '''
   Returns an estimate of the TTE using polynomial regression using
   numpy.linalg.lstsq
@@ -447,7 +425,7 @@ def poly_regression_num(beta, y, A, z):
   TTE_hat = np.sum((X @ v) - v[0])/n
   return TTE_hat
 
-def diff_in_means_naive(y, z):
+def DM_naive(y, z):
     '''
     Returns an estimate of the TTE using difference in means
     (mean outcome of individuals in treatment) - (mean outcome of individuals in control)
@@ -455,9 +433,16 @@ def diff_in_means_naive(y, z):
     y (numpy array): observed outcomes
     z (numpy array): treatment vector
     '''
-    return y.dot(z)/np.sum(z) - y.dot(1-z)/np.sum(1-z)
+    treated = np.sum(z)
+    untreated = np.sum(1-z)
+    est = 0
+    if treated > 0:
+        est = est + y.dot(z)/treated
+    if untreated > 0:
+        est = est - y.dot(1-z)/untreated
+        return est
 
-def diff_in_means_fraction(n, y, A, z, tol):
+def DM_fraction(n, y, A, z, tol):
     '''
     Returns an estimate of the TTE using weighted difference in means where 
     we only count neighborhoods with at least tol fraction of the neighborhood being
@@ -502,21 +487,24 @@ def horvitz_thompson(n, nc, y, A, z, q, p):
     p : float
         the treatment probability for chosen clusters in the staggered rollout
     '''
-    neighborhoods = [list(row.nonzero()[1]) for row in A] # list of neighbors of each unit
-    neighborhood_sizes = A.sum(axis=1).tolist() # size of each unit's neighborhood
-    neighbor_treatments = [list(z[neighborhood]) for neighborhood in neighborhoods] # list of treatment assignments in each neighborhood
+    AA = A.toarray()
 
-    A = A.multiply(scipy.sparse.csr_array(np.tile(np.repeat(np.arange(1,nc+1),n//nc), (n,1)))) # modifies the adjancecy matrix so that if there's an edge from j to i, A[i,j]=cluster(j)
-    cluster_neighborhoods = [np.unique(row.data,return_counts=True) for row in A] # for each i, cluster_neighborhoods[i] = [a list of clusters i's neighbors belong to, a list of how many neighbors are in each of these clusters]
-    cluster_neighborhood_sizes = [len(x[0]) for x in cluster_neighborhoods] # size of each unit's cluster neighborhood
+    cluster = []
+    for i in range(1,nc+1):
+        cluster.extend([i]*(n//nc))
+
+    cluster_neighborhoods = np.apply_along_axis(lambda x: np.bincount(x*cluster, minlength=nc+1), axis=1, arr=AA)[:,1:]
     
+    degree = np.sum(cluster_neighborhoods, axis=1)
+    cluster_degree = np.count_nonzero(cluster_neighborhoods, axis=1)
+
     # Probabilities of each person's neighborhood being entirely treated or entirely untreated
-    all_treated_prob = np.multiply(np.power(p, neighborhood_sizes), np.power(q, cluster_neighborhood_sizes))
-    none_treated_prob = [np.prod((1-q) + np.power(1-p, x[1])*q) for x in cluster_neighborhoods]
-    
+    all_treated_prob = np.power(p, degree) * np.power(q, cluster_degree)
+    none_treated_prob = np.prod(np.where(cluster_neighborhoods>0,(1-q)+np.power(1-p,cluster_neighborhoods)*q,1),axis=1)
+
     # Indicators of each person's neighborhood being entirely treated or entirely untreated
-    all_treated = [np.prod(treatments) for treatments in neighbor_treatments]
-    none_treated = [all(z == 0 for z in treatments)+0 for treatments in neighbor_treatments]
+    all_treated = np.prod(np.where(AA>0,z,1),axis=1)
+    none_treated = np.prod(np.where(AA>0,1-z,1),axis=1)
 
     zz = np.nan_to_num(np.divide(all_treated,all_treated_prob) - np.divide(none_treated,none_treated_prob))
 

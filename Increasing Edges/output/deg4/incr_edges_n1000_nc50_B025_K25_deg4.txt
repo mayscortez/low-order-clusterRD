@@ -1,8 +1,0 @@
-Runtime (in seconds) for (p_in,p_out) = (0.5,0.0) step: 5.915879964828491
-Runtime (in seconds) for (p_in,p_out) = (0.45,0.00102) step: 5.935503244400024
-Runtime (in seconds) for (p_in,p_out) = (0.4,0.00204) step: 5.864974737167358
-Runtime (in seconds) for (p_in,p_out) = (0.35,0.00306) step: 5.90903902053833
-Runtime (in seconds) for (p_in,p_out) = (0.3,0.00408) step: 5.913992881774902
-Runtime (in seconds) for (p_in,p_out) = (0.25,0.0051) step: 5.902017831802368
-Runtime (in seconds) for (p_in,p_out) = (0.2,0.00612) step: 5.914637088775635
-Total runtime in minutes: 0.6892731666564942

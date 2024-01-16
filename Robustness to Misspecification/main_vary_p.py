@@ -104,8 +104,8 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
 
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: horvitz_thompson(n, nc, y1, A, z1, Eq, p))  
 
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: diff_in_means_naive(y1,z1))  
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: diff_in_means_fraction(n,y1,A,z1,0.75))  
+    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: DM_naive(y1,z1))  
+    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: DM_fraction(n,y1,A,z1,0.75))  
 
 
     names_ClRD = ['PI-$n(p;1)$', 'PI-$\mathcal{U}(p;1)$', 
@@ -127,8 +127,8 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
     estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: poly_LS_prop(3, y3,A,z3))      # polynomial LS, beta=1
     estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: poly_LS_num(3, y3,A,z3))
 
-    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: diff_in_means_naive(y1,z1))                 # difference in means 
-    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: diff_in_means_fraction(n,y1,A,z1,0.75))     # thresholded difference in means
+    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: DM_naive(y1,z1))                 # difference in means 
+    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: DM_fraction(n,y1,A,z1,0.75))     # thresholded difference in means
 
     names_BRD = ['PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)',
                 'PI-$n(B;2)$', 'LS-Prop(2)', 'LS-Num(2)',

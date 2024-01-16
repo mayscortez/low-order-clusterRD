@@ -94,21 +94,21 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, phi, design, Eq,
 
     # Cluster Randomized Design Estimators
     estimators_clusterRD = []
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums,H_m))             # estimator looks at all [n]
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: graph_agnostic(n*q,sums_U,H_m))           # estimator only looking at [U]
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: horvitz_thompson_new(n, nc, y, A, z, Eq, target_p))  
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: diff_in_means_naive(y,z))                 # difference in means 
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
+    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: PI(n*q,sums,H_m))             # estimator looks at all [n]
+    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: PI(n*q,sums_U,H_m))           # estimator only looking at [U]
+    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, Eq, target_p))  
+    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: DM_naive(y,z))                 # difference in means 
+    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
     alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)']
 
     # Bernoulli Randomized Design Estimators
     estimators_bernRD = []
-    estimators_bernRD.append(lambda y,z,sums,H_m: graph_agnostic(n,sums,H_m))
-    estimators_bernRD.append(lambda y,z, sums, H_m: poly_regression_prop(beta, y,A,z))      # polynomial regression
-    estimators_bernRD.append(lambda y,z, sums, H_m: poly_regression_num(beta, y,A,z))
-    estimators_bernRD.append(lambda y,z,sums,H_m: diff_in_means_naive(y,z))                 # difference in means 
-    estimators_bernRD.append(lambda y,z,sums,H_m: diff_in_means_fraction(n,y,A,z,0.75))     # thresholded difference in means
+    estimators_bernRD.append(lambda y,z,sums,H_m: PI(n,sums,H_m))
+    estimators_bernRD.append(lambda y,z, sums, H_m: poly_LS_prop(beta, y,A,z))      # polynomial regression
+    estimators_bernRD.append(lambda y,z, sums, H_m: poly_LS_num(beta, y,A,z))
+    estimators_bernRD.append(lambda y,z,sums,H_m: DM_naive(y,z))                 # difference in means 
+    estimators_bernRD.append(lambda y,z,sums,H_m: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
     alg_names_bernRD = ['PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 

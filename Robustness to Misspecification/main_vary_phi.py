@@ -91,27 +91,26 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
     dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'Phi': phi, 'B': B, 'p': p, 'EK': EK, 'Eq': Eq}
     
     # Cluster Randomized Design Estimators
-    estimatorsClRD = []
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: horvitz_thompson(n, nc, y1, A, z1, Eq, p))  
+    estimatorsClRD = [] 
 
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: PI(n*q,sums1,H_m1))        # estimator looks at all [n], beta=1
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: PI(n*q,sums_U1,H_m1))      # estimator only looking at [U], beta=1
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: poly_LS_prop(1, y1,A,z1))  # polynomial LS, beta=1
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: poly_LS_num(1, y1,A,z1))
 
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: PI(n*q,sums2,H_m2))         # estimator looks at all [n], beta=2
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: PI(n*q,sums_U2,H_m2))       # estimator only looking at [U], beta=2
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: poly_LS_prop(2, y2,A,z2))   # polynomial LS, beta=2
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: poly_LS_num(2, y2,A,z2))
 
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: PI(n*q,sums3,H_m3))         # estimator looks at all [n], beta=3
     estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: PI(n*q,sums_U3,H_m3))       # estimator only looking at [U], beta=3
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: poly_LS_prop(3, y3,A,z3))   # polynomial LS, beta=3
-    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: poly_LS_num(3, y3,A,z3))
 
-    names_ClRD = ['HT', 'PI-$n(p;1)$', 'PI-$\mathcal{U}(p;1)$', 'LS-PropC(1)', 'LS-NumC(1)',
-                    'PI-$n(p;2)$', 'PI-$\mathcal{U}(p;2)$', 'LS-PropC(2)', 'LS-NumC(2)',
-                    'PI-$n(p;3)$', 'PI-$\mathcal{U}(p;3)$', 'LS-PropC(3)', 'LS-NumC(3)']
+    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: horvitz_thompson(n, nc, y1, A, z1, Eq, p)) 
+
+    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: DM_naive(y1,z1))  
+    estimatorsClRD.append(lambda q,y1,z1,sums1,H_m1,sums_U1,y2,z2,sums2,H_m2,sums_U2,y3,z3,sums3,H_m3,sums_U3: DM_fraction(n,y1,A,z1,0.75)) 
+
+    names_ClRD = ['PI-$n(p;1)$', 'PI-$\mathcal{U}(p;1)$', 
+                  'PI-$n(p;2)$', 'PI-$\mathcal{U}(p;2)$',
+                    'PI-$n(p;3)$', 'PI-$\mathcal{U}(p;3)$',
+                    'HT', 'DM-C', 'DM-C($0.75$)']
 
     # Bernoulli Randomized Design Estimators
     estimatorsBRD = []
@@ -127,12 +126,12 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
     estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: poly_LS_prop(3, y3,A,z3))      # polynomial LS, beta=1
     estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: poly_LS_num(3, y3,A,z3))
 
-    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: diff_in_means_naive(y1,z1))                 # difference in means 
-    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: diff_in_means_fraction(n,y1,A,z1,0.75))     # thresholded difference in means
+    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: DM_naive(y1,z1))                 # difference in means 
+    estimatorsBRD.append(lambda y1,z1,sums1,H_m1,y2,z2,sums2,H_m2,y3,z3,sums3,H_m3: DM_fraction(n,y1,A,z1,0.75))     # thresholded difference in means
 
-    names_BRD = ['PI-$n(B;1)$', 'LS-PropB(1)', 'LS-NumB(1)',
-                'PI-$n(B;2)$', 'LS-PropB(2)', 'LS-NumB(2)',
-                'PI-$n(B;3)$', 'LS-PropB(3)', 'LS-NumB(3)','DM', 'DM($0.75$)']
+    names_BRD = ['PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)',
+                'PI-$n(B;2)$', 'LS-Prop(2)', 'LS-Num(2)',
+                'PI-$n(B;3)$', 'LS-Prop(3)', 'LS-Num(3)','DM', 'DM($0.75$)']
 
     results = []
     for g in range(graphNum):

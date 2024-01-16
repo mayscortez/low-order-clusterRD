@@ -400,7 +400,7 @@ def outcome_sums(n, Y, Z, selected):
             sums_U[t] = np.sum(outcomes[selected])
     return sums, sums_U
 
-def graph_agnostic(n, sums, H):
+def PI(n, sums, H):
     '''
     Returns an estimate of the TTE with (beta+1) staggered rollout design
 
@@ -448,7 +448,7 @@ def poly_interp_linear(n, P, sums):
   return TTE_hat2
 
 
-def poly_regression_prop(beta, y, A, z):
+def poly_LS_prop(beta, y, A, z):
   '''
   Returns an estimate of the TTE using polynomial regression using
   numpy.linalg.lstsq
@@ -475,7 +475,7 @@ def poly_regression_prop(beta, y, A, z):
   v = np.linalg.lstsq(X,y,rcond=None)[0]
   return np.sum(v)-v[0]
 
-def poly_regression_num(beta, y, A, z):
+def poly_LS_num(beta, y, A, z):
   '''
   Returns an estimate of the TTE using polynomial regression using
   numpy.linalg.lstsq
@@ -512,7 +512,7 @@ def poly_regression_num(beta, y, A, z):
   TTE_hat = np.sum((X @ v) - v[0])/n
   return TTE_hat
 
-def diff_in_means_naive(y, z):
+def DM_naive(y, z):
     '''
     Returns an estimate of the TTE using difference in means
     (mean outcome of individuals in treatment) - (mean outcome of individuals in control)
@@ -529,7 +529,7 @@ def diff_in_means_naive(y, z):
         est = est - y.dot(1-z)/untreated
         return est
 
-def diff_in_means_fraction(n, y, A, z, tol):
+def DM_fraction(n, y, A, z, tol):
     '''
     Returns an estimate of the TTE using weighted difference in means where 
     we only count neighborhoods with at least tol fraction of the neighborhood being
@@ -558,7 +558,7 @@ def diff_in_means_fraction(n, y, A, z, tol):
 # Estimators - Horvitz-Thomson & Hajek
 #######################################
 
-def horvitz_thompson(n, nc, y, A, z, q, p):
+def horvitz_thompson_old(n, nc, y, A, z, q, p):
     '''Computes the Horvitz-Thompson estimate of the TTE under Bernoulli design or Cluster-Bernoulli design.
     
     Parameters
@@ -598,7 +598,7 @@ def horvitz_thompson(n, nc, y, A, z, q, p):
 
     return 1/n * y.dot(zz)
 
-def horvitz_thompson_new(n, nc, y, A, z, q, p):    
+def horvitz_thompson(n, nc, y, A, z, q, p):    
     AA = A.toarray()
 
     cluster = []

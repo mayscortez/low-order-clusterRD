@@ -60,15 +60,6 @@ def SBM(n, k, Pii, Pij):
     A.setdiag(1)
     return G, scipy.sparse.csr_array(A)
 
-def ER(n,p):
-    '''
-    Returns the adjacency matrix (as a scipy sparse array) of an Erdos Renyi graph on n nodes with edge probability p
-    '''
-    G = nx.erdos_renyi_graph(n,p,directed=True)
-    A = nx.to_scipy_sparse_array(G, format='coo')
-    A.setdiag(1)
-    return G, scipy.sparse.csr_array(A)
-
 def simpleWeights(A, diag=5, offdiag=5, rand_diag=np.array([]), rand_offdiag=np.array([])):
     '''
     Returns weights generated from simpler model (that incorporates degrees)
@@ -521,7 +512,7 @@ def poly_LS_num(beta, y, A, z):
   TTE_hat = np.sum((X @ v) - v[0])/n
   return TTE_hat
 
-def diff_in_means_naive(y, z):
+def DM_naive(y, z):
     '''
     Returns an estimate of the TTE using difference in means
     (mean outcome of individuals in treatment) - (mean outcome of individuals in control)
@@ -538,7 +529,7 @@ def diff_in_means_naive(y, z):
         est = est - y.dot(1-z)/untreated
         return est
 
-def diff_in_means_fraction(n, y, A, z, tol):
+def DM_fraction(n, y, A, z, tol):
     '''
     Returns an estimate of the TTE using weighted difference in means where 
     we only count neighborhoods with at least tol fraction of the neighborhood being
