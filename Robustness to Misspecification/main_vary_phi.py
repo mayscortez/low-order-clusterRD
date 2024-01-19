@@ -194,9 +194,9 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
             y1 = fy(z1)
             y2 = fy(z2)
             y3 = fy(z3)
-            sums1, sums_U1 = outcome_sums(n, ppom(1, C, alpha), Z1, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
-            sums2, sums_U2 = outcome_sums(n, ppom(2, C, alpha), Z2, selected_nodes)
-            sums3, sums_U3 = outcome_sums(n, ppom(3, C, alpha), Z3, selected_nodes)
+            sums1, sums_U1 = outcome_sums(n, fy, Z1, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
+            sums2, sums_U2 = outcome_sums(n, fy, Z2, selected_nodes)
+            sums3, sums_U3 = outcome_sums(n, fy, Z3, selected_nodes)
 
             for x in range(len(estimatorsClRD)):
                 if realized:
@@ -218,9 +218,9 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
             y1_bern = fy(z1_bern)
             y2_bern = fy(z2_bern)
             y3_bern = fy(z3_bern)
-            sums1_bern = outcome_sums(n, ppom(1, C, alpha), Z1_bern, range(0,n))[0]
-            sums2_bern = outcome_sums(n, ppom(2, C, alpha), Z2_bern, range(0,n))[0]
-            sums3_bern = outcome_sums(n, ppom(3, C, alpha), Z3_bern, range(0,n))[0]
+            sums1_bern = outcome_sums(n, fy, Z1_bern, range(0,n))[0]
+            sums2_bern = outcome_sums(n, fy, Z2_bern, range(0,n))[0]
+            sums3_bern = outcome_sums(n, fy, Z3_bern, range(0,n))[0]
 
             for x in range(len(estimatorsBRD)):
                 est = estimatorsBRD[x](y1_bern,z1_bern,sums1_bern,H_bern[0],y2_bern,z2_bern,sums2_bern,H_bern[1],y3_bern,z3_bern,sums3_bern,H_bern[2]) # have it include both the parameters for all as well as just U
