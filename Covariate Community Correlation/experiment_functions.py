@@ -46,6 +46,9 @@ def ppom(beta, C, alpha):
 
 bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
+threshold_num = lambda theta, A, z: (A.dot(z) >= theta) + 0
+threshold_prop = lambda theta, A, z: (A.dot(z)/A.sum(axis=1).tolist() >= theta) + 0
+
 def SBM(n, k, Pii, Pij):
     '''
     Returns the adjacency matrix (as a scipy sparse array) of a stochastic block model on n nodes with k communities

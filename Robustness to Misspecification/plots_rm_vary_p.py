@@ -53,7 +53,7 @@ def plot(load_path, x_var, experiment_label, model, x_plot, title, cluster_selec
         sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', errorbar=None, data=newData, legend='brief', markers=True, palette=color_pal)
 
         #ax.set_xlim(0,0.001)
-        #ax.set_ylim(0,0.4)
+        ax.set_ylim(0,0.4)
         ax.set_xlabel(x_plot, fontsize = 18)
         ax.set_ylabel("MSE", fontsize = 18)
         ax.set_title(title, fontsize=18)
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     phis = [0, 0.5] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete" (for how to choose clusters)
     type = "both"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
-    estimators = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
+    estimators = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']  # which estimators to plot
 
 for i in range(len(models)):
     print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
@@ -131,4 +131,5 @@ Examples:
     estimators = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']
     estimators = ['PI-$\mathcal{U}(p;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']  
     estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'PI-$n(B;1)$', 'PI-$n(B;2)$'] 
+    estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'DM-C', 'DM-C($0.75$)']  
 '''

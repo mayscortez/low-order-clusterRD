@@ -59,7 +59,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
 
     #ax.set_xlim(0,0.001)
     ax.set_xlabel(x_plot, fontsize = 18)
-    #ax.set_ylim(-0.75,0.75)
+    #ax.set_ylim(0,1)
     ax.set_ylabel("Relative Bias", fontsize = 18)
     ax.set_title(title, fontsize=18)
     handles, labels = ax.get_legend_handles_labels()
@@ -73,9 +73,9 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
     # Create and save MSE plots
     fig2 = plt.figure()
     ax2 = fig2.add_subplot(111)
-    sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', data=newData, legend='brief', markers=True, palette=color_pal)
+    sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', data=newData, errorbar=None, legend='brief', markers=True, palette=color_pal)
 
-    ax2.set_ylim(-1,10)
+    #ax2.set_ylim(0,2)
     ax2.set_xlabel(x_plot, fontsize = 18)
     ax2.set_ylabel("MSE", fontsize = 18)
     ax2.set_title(title, fontsize=20)
@@ -96,15 +96,15 @@ if __name__ == "__main__":
             [0.5, 0.625, 25/33, 25/29, 1], # K in [50, 40, 33, 29, 25]
             [0.02, 0.1, 0.2, 0.5, 1]]      # K in [50, 10, 5, 2, 1]
     '''
-    beta = [2]
-    B = [0.06] 
-    probs = [[0.06]]
+    beta = [1,2]
+    B = [0.06, 0.06] 
+    probs = [[0.06, 0.25, 1/3, 2/3, 1], [0.06, 0.25, 1/3, 2/3, 1]]
     p_in = 0.5
     design = "bernoulli"  # bernoulli   complete
     
     # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num']
+    estimators = ['PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)']
     
     for b in range(len(beta)):
         print('Plotting degree: {} ({} design)'.format(beta[b], design))

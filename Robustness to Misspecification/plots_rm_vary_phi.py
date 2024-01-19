@@ -19,7 +19,7 @@ def main(model, B=0.06, p_in=0.5, p_out=0, p=0, cluster_selection = "bernoulli",
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['Phi']
     x_plot = ['$\phi$']
-    title = ['$\\beta={}, SBM({},{},{},{}), B={}, \p={}$'.format(degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
+    title = ['$\\beta={}, SBM({},{},{},{}), B={}, p={}$'.format(degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
     for ind in range(len(x_var)):
         plot(load_path, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
 
@@ -98,16 +98,17 @@ if __name__ == "__main__":
     B = 0.06
     Piis = [0.5]        # edge probability within clusters        
     Pijs = [0]          # edge probability across different clusters 
-    probs = [0.06, 1]   # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
+    probs = [0.06, 0.25, 1]   # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete"
-    type = "both" # other options:  "Bias"   "MSE"
-    estimators = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
-
+    type = "MSE" # other options:  "Bias"   "MSE"
+    lin_nonpara_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
+    linear_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
+    cluster_ests = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'DM-C', 'DM-C($0.75$)'] # which estimators to plot
 for i in range(len(models)):
     print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
     for j in range(len(Piis)):
         for p in probs:
-            main(models[i], B, Piis[j], Pijs[j], p, cluster_selection, type, estimators)
+            main(models[i], B, Piis[j], Pijs[j], p, cluster_selection, type, estimators=linear_ests)
     print() 
 
 '''
