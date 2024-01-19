@@ -7,6 +7,9 @@ import numpy as np
 import pandas as pd
 import time
 from experiment_functions import *
+from experiment_functions import ppom
+from experiment_functions import threshold_model
+from experiment_functions import saturation_model
 
 def main(model, graphNum, T, B=0.06, phi=0, p_in = 0.5, cluster_selection = "bernoulli"):
     '''
@@ -148,8 +151,18 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
         
         # potential outcomes model
         if model['type'] == 'ppom':
-            true_beta = model['degree']
-            fy = ppom(true_beta, C, alpha)
+            beta = model['degree']
+            fy = ppom(beta, C, alpha)
+        if model['type'] == 'threshold':
+            beta = model['degree']
+            theta = model['params'][0]
+            type = model['params'][1]
+            fy = threshold_model(theta, beta, C, alpha, A, type)
+        if model['type'] == 'saturation':
+            beta = model['degree']
+            theta = model['params']
+            fy = saturation_model(theta, beta, C, alpha)
+            
 
         # compute the true TTE
         TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))        

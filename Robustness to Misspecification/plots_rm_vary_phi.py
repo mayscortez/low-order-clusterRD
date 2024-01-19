@@ -5,7 +5,7 @@ import numpy as np
 import seaborn as sns
 import os
 
-def main(model, B=0.06, p_in=0.5, p_out=0, p=0, cluster_selection = "bernoulli", type='both', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
+def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='both', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
     model_name = model['name']
     degree = model['degree']
     experiment = 'vary_phi'
@@ -13,6 +13,7 @@ def main(model, B=0.06, p_in=0.5, p_out=0, p=0, cluster_selection = "bernoulli",
 
     n = 1000
     nc = 50
+    p_out = (0.5-p_in)/49
 
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','') # naming convention
     
@@ -97,7 +98,6 @@ if __name__ == "__main__":
             {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
     B = 0.06
     Piis = [0.5]        # edge probability within clusters        
-    Pijs = [0]          # edge probability across different clusters 
     probs = [0.06, 0.25, 1]   # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete"
     type = "MSE" # other options:  "Bias"   "MSE"
@@ -108,7 +108,7 @@ for i in range(len(models)):
     print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
     for j in range(len(Piis)):
         for p in probs:
-            main(models[i], B, Piis[j], Pijs[j], p, cluster_selection, type, estimators=linear_ests)
+            main(models[i], B, Piis[j], p, cluster_selection, type, estimators=linear_ests)
     print() 
 
 '''

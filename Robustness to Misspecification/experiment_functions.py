@@ -46,6 +46,44 @@ def ppom(beta, C, alpha):
 
 bernoulli = lambda n,p : (np.random.rand(n) < p) + 0
 
+threshold_num = lambda theta, A, z: (A.dot(z) >= theta) + 0
+threshold_prop = lambda theta, A, z: (A.dot(z)/A.sum(axis=1).tolist() >= theta) + 0
+
+def threshold_model(theta, beta, C, alpha, A, type='num'):
+    types = {'num': threshold_num, 'prop': threshold_prop}
+    if beta == 0:
+        return lambda z: np.multiply(alpha + a1*z, types[type](theta, A, z))
+    elif beta == 1:
+        return lambda z: np.multiply(alpha + a1*C.dot(z), types[type](theta, A, z))
+    else:
+        g = lambda z : C.dot(z) / np.array(np.sum(C,1)).flatten()
+        if beta == 2:
+            f = f_quadratic
+        elif beta == 3:
+            f = f_cubic
+        elif beta == 4:
+            f = f_quartic
+        else:
+            print("ERROR: invalid degree")
+        return lambda z: np.multiply(f(alpha, C.dot(z), g(z)), types[type](theta, A, z))
+    
+def saturation_model(theta, beta, C, alpha):
+    if beta == 0:
+        return lambda z: np.minimum(alpha + a1*z, theta)
+    elif beta == 1:
+        return lambda z: np.minimum(alpha + a1*C.dot(z), theta)
+    else:
+        g = lambda z : C.dot(z) / np.array(np.sum(C,1)).flatten()
+        if beta == 2:
+            f = f_quadratic
+        elif beta == 3:
+            f = f_cubic
+        elif beta == 4:
+            f = f_quartic
+        else:
+            print("ERROR: invalid degree")
+        return lambda z: np.minimum(f(alpha, C.dot(z), g(z)), theta)
+
 def SBM(n, k, Pii, Pij):
     '''
     Returns the adjacency matrix (as a scipy sparse array) of a stochastic block model on n nodes with k communities
