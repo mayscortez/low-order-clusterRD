@@ -4,6 +4,12 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.sans-serif": "Helvetica",
+})
+plt.rcParams["mathtext.fontset"]
 
 def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='both', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
     model_name = model['name']
@@ -14,13 +20,26 @@ def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='
     n = 1000
     nc = 50
     p_out = (0.5-p_in)/49
+    
+    if model["type"] == 'threshold' and model["params"][1] == "prop":
+        name = '$\mathrm{Prop}_i(\mathbf{z};' + str(model["params"][0]) +  ')$'
+    elif model["type"] == 'threshold' and model["params"][1] == "num":
+        name = '$\mathrm{Num}_i(\mathbf{z};' + str(model["params"][0]) +  ')$'
+    elif model["type"] == 'saturation':
+        name = '$\mathrm{Sat}_i(\mathbf{z};' + str(model["params"][0]) +  ')$'
+    elif model["type"] == 'ppom':
+        name = 'Low-Order Polynomial'
+    else:
+        raise ValueError("Model type is invalid.")
+
 
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_phi' + str(phi).replace('.','') # naming convention
     
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['p']
     x_plot = ['$p$']
-    title = ['$\\beta={}, SBM({},{},{},{}), B={}, \phi={}$'.format(degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, phi)]
+    title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, \phi={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, phi)]
+    print(title)
     for ind in range(len(x_var)):
         plot(load_path, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
 
@@ -54,12 +73,12 @@ def plot(load_path, x_var, experiment_label, model, x_plot, title, cluster_selec
         sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', errorbar=None, data=newData, legend='brief', markers=True, palette=color_pal)
 
         #ax.set_xlim(0,0.001)
-        ax.set_ylim(0,0.4)
+        ax.set_ylim(0,1.05)
         ax.set_xlabel(x_plot, fontsize = 18)
         ax.set_ylabel("MSE", fontsize = 18)
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles, labels=labels, loc='upper left', fontsize = 14)
+        ax.legend(handles=handles, labels=labels, loc='lower left', fontsize = 14)
         plt.grid()
         plt.tight_layout()
 
@@ -94,15 +113,18 @@ def plot(load_path, x_var, experiment_label, model, x_plot, title, cluster_selec
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
-            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
-            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
+    theta_prop = 0.5
+    theta_num = 5
+    theta = 12 # for deg3, 34; for deg 4, 42
+    models = [{'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
+            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
     B = 0.06        
     Piis = [0.5]    # edge probability within clusters
     phis = [0, 0.5] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete" (for how to choose clusters)
     type = "both"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
-    estimators = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']  # which estimators to plot
+    estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$n(B;1)$', 'PI-$n(B;2)$']   # which estimators to plot
 
 for i in range(len(models)):
     print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
@@ -112,12 +134,17 @@ for i in range(len(models)):
     print() 
 
 '''
+theta_prop = 0.5
+theta_num = 5
+theta = 12 # for deg3, 34; for deg 4, 42
 models = [{'type': 'ppom', 'degree':1, 'name':'ppom1', 'params': []},
             {'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
             {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
-            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
+            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []},'
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
+            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
 Piis = [0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.01]
-Pijs = [(0.5-p)/49 for p in Piis]
 phis = [0, 0.1, 0.2, 0.3, 0.4, 0.5] 
 
 Possible estimators: 
@@ -129,6 +156,7 @@ NOTE (cont): they are in order in names_ClRD and names_BRD, so as long as that r
 Examples:
     estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'PI-$n(B;1)$', 'LS-Prop(1)', 'DM($0.75$)'] 
     estimators = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']
+    estimators = ['PI-$n(p;1)$', 'PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] 
     estimators = ['PI-$\mathcal{U}(p;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']  
     estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'PI-$n(B;1)$', 'PI-$n(B;2)$'] 
     estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'DM-C', 'DM-C($0.75$)']  
