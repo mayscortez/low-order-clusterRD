@@ -160,7 +160,7 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
             fy = threshold_model(theta, beta, C, alpha, A, type)
         if model['type'] == 'saturation':
             beta = model['degree']
-            theta = model['params']
+            theta = model['params'][0]
             fy = saturation_model(theta, beta, C, alpha)
             
 
