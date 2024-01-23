@@ -6,10 +6,8 @@ Compare the MSE of the estimators under cluster staggered rollout versus bernoul
 import numpy as np
 import pandas as pd
 import time
-from experiment_functions import *
-from experiment_functions import ppom
-from experiment_functions import threshold_model
-from experiment_functions import saturation_model
+from experiment_functions import PI, horvitz_thompson, DM_naive, DM_fraction, poly_LS_prop, poly_LS_num, SBM, binary_covariate_weights, ppom, threshold_model, saturation_model, seq_treatment_probs, bern_coeffs, select_clusters_complete, select_clusters_bernoulli, staggered_rollout_bern_clusters, outcome_sums, staggered_rollout_bern
+
 
 def main(model, graphNum, T, B=0.06, phi=0, p_in = 0.5, cluster_selection = "bernoulli"):
     '''
@@ -29,7 +27,10 @@ def main(model, graphNum, T, B=0.06, phi=0, p_in = 0.5, cluster_selection = "ber
     experiment = 'vary_p' 
     degree = model['degree']
     model_name = model['name']
-    save_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
+    if model["type"] == 'ppom':
+        save_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/'    
+    else:
+        save_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'  
     
     p_out = (0.5-p_in)/49
     if p_in != p_out:

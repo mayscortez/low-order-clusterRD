@@ -6,7 +6,7 @@ Compare the MSE of the estimators under cluster staggered rollout versus bernoul
 import numpy as np
 import pandas as pd
 import time
-from experiment_functions import *
+from experiment_functions import PI, horvitz_thompson, DM_naive, DM_fraction, poly_LS_prop, poly_LS_num, SBM, binary_covariate_weights, ppom, threshold_model, saturation_model, seq_treatment_probs, bern_coeffs, select_clusters_complete, select_clusters_bernoulli, staggered_rollout_bern_clusters, outcome_sums, staggered_rollout_bern
 
 def main(model, graphNum, T, B=0.06, p=1, p_in = 0.5, cluster_selection = "bernoulli"):
     '''
@@ -25,8 +25,11 @@ def main(model, graphNum, T, B=0.06, p=1, p_in = 0.5, cluster_selection = "berno
     '''
     experiment = 'vary_phi' 
     degree = model['degree']
-    model_name = model['name']   
-    save_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
+    model_name = model['name']
+    if model["type"] == 'ppom':
+        save_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/'    
+    else:
+        save_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
     
     p_out = (0.5-p_in)/49
     if p_in != p_out:
@@ -148,8 +151,17 @@ def run_experiment(model, n, nc, B, p, Pii, Pij, phi, design, Eq, EK, graphNum, 
         
         # potential outcomes model
         if model['type'] == 'ppom':
-            true_beta = model['degree']
-            fy = ppom(true_beta, C, alpha)
+            beta = model['degree']
+            fy = ppom(beta, C, alpha)
+        if model['type'] == 'threshold':
+            beta = model['degree']
+            theta = model['params'][0]
+            type = model['params'][1]
+            fy = threshold_model(theta, beta, C, alpha, A, type)
+        if model['type'] == 'saturation':
+            beta = model['degree']
+            theta = model['params'][0]
+            fy = saturation_model(theta, beta, C, alpha)
 
         # compute the true TTE
         TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))        
