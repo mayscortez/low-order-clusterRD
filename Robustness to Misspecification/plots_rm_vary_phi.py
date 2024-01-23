@@ -15,8 +15,12 @@ def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='bo
     model_name = model['name']
     degree = model['degree']
     experiment = 'vary_phi'
-    load_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
-
+    if model["type"] == 'ppom':
+        my_path = experiment + '/'  + model_name + '/' + cluster_selection + '/' 
+    else:            
+        my_path = experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'
+    load_path = 'output/' + my_path
+    
     n = 1000
     nc = 50
     p_out = (0.5-p_in)/49
@@ -39,10 +43,10 @@ def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='bo
     x_plot = ['$\phi$']
     title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, p={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
     for ind in range(len(x_var)):
-        plot(load_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
+        plot(my_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
 
-def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
-    save_path = 'plots/' + 'vary_phi' + '/'  + model + '-ppom' + str(degree) + '/' + cluster_selection + '/'    
+def plot(my_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
+    save_path = 'plots/' + my_path  
 
     color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#feba01',
                  'PI-$\mathcal{U}(p;1)$': '#1b45a6', 'PI-$\mathcal{U}(p;2)$': '#019cca', 'PI-$\mathcal{U}(p;3)$': '#009d9d', 
@@ -57,7 +61,7 @@ def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, clust
 
     print('\n'+experiment_label+'_'+'vary-'+x_var)
     
-    df = pd.read_csv(load_path + experiment_label + '-full.csv')
+    df = pd.read_csv('output/' + my_path + experiment_label + '-full.csv')
     newData = df.loc[df['Estimator'].isin(estimators)]
 
     plt.rc('text', usetex=True)
@@ -110,31 +114,40 @@ def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, clust
 if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-    models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
-            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
-            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
+    theta_prop = 0.5
+    theta_num = 5
+    theta = 12 # for deg3, 34; for deg 4, 42    
+    models = [ {'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
+            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
     B = 0.06
     Piis = [0.5]        # edge probability within clusters        
     probs = [0.06, 0.25, 1]   # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete"
     type = "both" # other options:  "Bias"   "MSE"   "both"
+    
     lin_nonpara_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     linear_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     cluster_ests = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'DM-C', 'DM-C($0.75$)'] # which estimators to plot
-for i in range(len(models)):
-    print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
-    for j in range(len(Piis)):
-        for p in probs:
-            main(models[i], B, Piis[j], p, cluster_selection, type, estimators=linear_ests)
-    print() 
+    for i in range(len(models)):
+        print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
+        for j in range(len(Piis)):
+            for p in probs:
+                main(models[i], B, Piis[j], p, cluster_selection, type, estimators=linear_ests)
+        print() 
 
 '''
+theta_prop = 0.5
+theta_num = 5
+theta = 12 # for deg3, 34; for deg 4, 42
 models = [{'type': 'ppom', 'degree':1, 'name':'ppom1', 'params': []},
             {'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
             {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
-            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []}]
+            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []},'
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
+            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
 Piis = [0.5, 0.45, 0.4, 0.35, 0.3, 0.25, 0.2, 0.01]
-Pijs = [(0.5-p)/49 for p in Piis]
 probs = [0.06, 0.12, 0.25, 1/3, 2/3, 1]
 
 Possible estimators: 
