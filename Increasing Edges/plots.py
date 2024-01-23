@@ -16,9 +16,9 @@ def main(beta=[1,2,3], B=0.06, p=1, estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop'
               'Global clustering coefficient $\mathcal{C}_\mathrm{global}$',
               'Network Average Clustering Coefficient $\mathcal{C}_\mathrm{avg}$']
     for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, p),
-                 '$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, p),
-                 '$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, p)]
+        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, np.round(p,3)),
+                 '$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, np.round(p,3)),
+                 '$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, np.round(p,3))]
         for ind in range(len(x_var)):
             plot(x_var[ind],x_label,b,x_plot[ind],title[ind],estimators)
 
@@ -97,11 +97,11 @@ if __name__ == "__main__":
     '''
     beta = [1,2,3]
     B = 0.06
-    probs = [1]
+    probs = [1/3]
     
     # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    estimators = ['PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)']
+    estimators = ['PI-$\mathcal{U}$($p$)', 'PI-$n$($B$)']
 
     for p in probs:
         print('Plotting p: {} (bernoulli design)'.format(p))
