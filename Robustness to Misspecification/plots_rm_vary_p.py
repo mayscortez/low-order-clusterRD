@@ -12,10 +12,10 @@ plt.rcParams.update({
 plt.rcParams["mathtext.fontset"]
 
 def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='both', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
-    model_name = model['name']
     degree = model['degree']
+    model_name = model['name']
     experiment = 'vary_p'
-    load_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/'              
+    load_path = 'output/' + experiment + '/'  + model_name  + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
 
     n = 1000
     nc = 50
@@ -39,17 +39,17 @@ def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='
     x_var = ['p']
     x_plot = ['$p$']
     title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, \phi={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, phi)]
-    print(title)
+    print(title[0])
     for ind in range(len(x_var)):
-        plot(load_path, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
+        plot(load_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
 
-def plot(load_path, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
-    save_path = 'plots/' + 'vary_p' + '/'  + model + '/' + cluster_selection + '/'    
+def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
+    save_path = 'plots/' + 'vary_p' + '/'  + model + '-ppom' + str(degree) + '/' + cluster_selection + '/'    
 
     color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#feba01',
                  'PI-$\mathcal{U}(p;1)$': '#1b45a6', 'PI-$\mathcal{U}(p;2)$': '#019cca', 'PI-$\mathcal{U}(p;3)$': '#009d9d', 
                  'HT': '#e51e31',
-                 'DM-C': '#fb5082', 'DM-C($0.75$)': '#ff7787',
+                 'DM-C': '#e35610', 'DM-C($0.75$)': '#ff7787', #'DM-C': '#fb5082'
                  'PI-$n(B;1)$': '#e0d100', 'PI-$n(B;2)$': '#ffa706', 'PI-$n(B;3)$': '#ed5902',
                  'LS-Prop(1)': '#009633', 'LS-Prop(2)': '#95c413', 'LS-Prop(3)': '#f5c003',
                  'LS-Num(1)': '#46c1c1', 'LS-Num(2)': '#3e66c9', 'LS-Num(3)': '#c42796', 
@@ -124,7 +124,7 @@ if __name__ == "__main__":
     phis = [0, 0.5] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete" (for how to choose clusters)
     type = "both"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
-    estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$n(B;1)$', 'PI-$n(B;2)$']   # which estimators to plot
+    estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'HT', 'DM-C', 'DM-C($0.75$)']   # which estimators to plot
 
 for i in range(len(models)):
     print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))

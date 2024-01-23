@@ -4,33 +4,50 @@ import pandas as pd
 import numpy as np
 import seaborn as sns
 import os
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.sans-serif": "Helvetica",
+})
+plt.rcParams["mathtext.fontset"]
 
 def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='both', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
     model_name = model['name']
     degree = model['degree']
     experiment = 'vary_phi'
-    load_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/'              
+    load_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
 
     n = 1000
     nc = 50
     p_out = (0.5-p_in)/49
+
+    if model["type"] == 'threshold' and model["params"][1] == "prop":
+        name = '$\mathrm{Prop}_i(\mathbf{z};' + str(model["params"][0]) +  ')$'
+    elif model["type"] == 'threshold' and model["params"][1] == "num":
+        name = '$\mathrm{Num}_i(\mathbf{z};' + str(model["params"][0]) +  ')$'
+    elif model["type"] == 'saturation':
+        name = '$\mathrm{Sat}_i(\mathbf{z};' + str(model["params"][0]) +  ')$'
+    elif model["type"] == 'ppom':
+        name = 'Low-Order Polynomial'
+    else:
+        raise ValueError("Model type is invalid.")
 
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','') # naming convention
     
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['Phi']
     x_plot = ['$\phi$']
-    title = ['$\\beta={}, SBM({},{},{},{}), B={}, p={}$'.format(degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
+    title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, p={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
     for ind in range(len(x_var)):
-        plot(load_path, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
+        plot(load_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
 
-def plot(load_path, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
-    save_path = 'plots/' + 'vary_phi' + '/'  + model + '/' + cluster_selection + '/'    
+def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
+    save_path = 'plots/' + 'vary_phi' + '/'  + model + '-ppom' + str(degree) + '/' + cluster_selection + '/'    
 
     color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#feba01',
                  'PI-$\mathcal{U}(p;1)$': '#1b45a6', 'PI-$\mathcal{U}(p;2)$': '#019cca', 'PI-$\mathcal{U}(p;3)$': '#009d9d', 
                  'HT': '#e51e31',
-                 'DM-C': '#fb5082', 'DM-C($0.75$)': '#ff7787',
+                 'DM-C': '#e35610', 'DM-C($0.75$)': '#ff7787',  #'DM-C': '#fb5082'
                  'PI-$n(B;1)$': '#e0d100', 'PI-$n(B;2)$': '#ffa706', 'PI-$n(B;3)$': '#ed5902',
                  'LS-Prop(1)': '#009633', 'LS-Prop(2)': '#95c413', 'LS-Prop(3)': '#f5c003',
                  'LS-Num(1)': '#46c1c1', 'LS-Num(2)': '#3e66c9', 'LS-Num(3)': '#c42796', 
@@ -100,7 +117,7 @@ if __name__ == "__main__":
     Piis = [0.5]        # edge probability within clusters        
     probs = [0.06, 0.25, 1]   # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete"
-    type = "MSE" # other options:  "Bias"   "MSE"
+    type = "both" # other options:  "Bias"   "MSE"   "both"
     lin_nonpara_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     linear_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     cluster_ests = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'DM-C', 'DM-C($0.75$)'] # which estimators to plot

@@ -24,8 +24,9 @@ def main(model, graphNum, T, B=0.06, p=1, p_in = 0.5, cluster_selection = "berno
     cluster_selection_RD (str): either "complete" or "bernoulli" depending on the design used for selecting clusters
     '''
     experiment = 'vary_phi' 
+    degree = model['degree']
     model_name = model['name']   
-    save_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/'              
+    save_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
     
     p_out = (0.5-p_in)/49
     if p_in != p_out:
