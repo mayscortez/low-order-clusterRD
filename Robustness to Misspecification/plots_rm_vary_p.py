@@ -15,7 +15,10 @@ def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='
     degree = model['degree']
     model_name = model['name']
     experiment = 'vary_p'
-    load_path = 'output/' + experiment + '/'  + model_name  + '-ppom' + str(degree) + '/' + cluster_selection + '/'              
+    if model["type"] == 'ppom':
+        my_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/' 
+    else:            
+        my_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'           
 
     n = 1000
     nc = 50
@@ -41,10 +44,10 @@ def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='
     title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, \phi={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, phi)]
     print(title[0])
     for ind in range(len(x_var)):
-        plot(load_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
+        plot(my_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
 
-def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
-    save_path = 'plots/' + 'vary_p' + '/'  + model + '-ppom' + str(degree) + '/' + cluster_selection + '/'    
+def plot(my_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
+    save_path = 'plots/' + my_path
 
     color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#feba01',
                  'PI-$\mathcal{U}(p;1)$': '#1b45a6', 'PI-$\mathcal{U}(p;2)$': '#019cca', 'PI-$\mathcal{U}(p;3)$': '#009d9d', 
@@ -60,7 +63,7 @@ def plot(load_path, degree, x_var, experiment_label, model, x_plot, title, clust
     print('\n'+experiment_label+'_'+'vary-'+x_var)
 
     #Create and save plots
-    df = pd.read_csv(load_path + experiment_label + '-full.csv')
+    df = pd.read_csv('output/' + my_path + experiment_label + '-full.csv')
     newData = df.loc[df['Estimator'].isin(estimators)]
 
     plt.rc('text', usetex=True)
@@ -126,12 +129,12 @@ if __name__ == "__main__":
     type = "both"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
     estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'HT', 'DM-C', 'DM-C($0.75$)']   # which estimators to plot
 
-for i in range(len(models)):
-    print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
-    for j in range(len(Piis)):
-        for phi in phis:
-            main(models[i], B, Piis[j], phi, cluster_selection, type, estimators)
-    print() 
+    for i in range(len(models)):
+        print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
+        for j in range(len(Piis)):
+            for phi in phis:
+                main(models[i], B, Piis[j], phi, cluster_selection, type, estimators)
+        print() 
 
 '''
 theta_prop = 0.5

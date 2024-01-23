@@ -19,7 +19,6 @@ def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='bo
         my_path = experiment + '/'  + model_name + '/' + cluster_selection + '/' 
     else:            
         my_path = experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'
-    load_path = 'output/' + my_path
     
     n = 1000
     nc = 50
