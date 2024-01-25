@@ -565,7 +565,7 @@ def DM_naive(y, z):
         est = est + y.dot(z)/treated
     if untreated > 0:
         est = est - y.dot(1-z)/untreated
-        return est
+    return est
 
 def DM_fraction(n, y, A, z, tol):
     '''
