@@ -1,0 +1,8 @@
+Runtime (in seconds) for phi = 0 step: 37.181118965148926
+Runtime (in seconds) for phi = 0.1 step: 36.30504107475281
+Runtime (in seconds) for phi = 0.2 step: 36.44846296310425
+Runtime (in seconds) for phi = 0.3 step: 37.22003412246704
+Runtime (in seconds) for phi = 0.4 step: 36.39525079727173
+Runtime (in seconds) for phi = 0.5 step: 36.61221504211426
+
+Total runtime in minutes: 3.669372383753459
