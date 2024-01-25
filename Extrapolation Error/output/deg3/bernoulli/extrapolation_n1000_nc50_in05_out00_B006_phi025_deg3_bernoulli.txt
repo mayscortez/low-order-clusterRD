@@ -1,10 +1,10 @@
-Runtime (in seconds) for p = 0.06, E[K] = 50 step: 0.061470985412597656
-Runtime (in seconds) for p = 0.12, E[K] = 25 step: 0.0745849609375
-Runtime (in seconds) for p = 0.167, E[K] = 18 step: 0.06265807151794434
-Runtime (in seconds) for p = 0.25, E[K] = 12 step: 0.061846017837524414
-Runtime (in seconds) for p = 0.333, E[K] = 9 step: 0.07343101501464844
-Runtime (in seconds) for p = 0.429, E[K] = 7 step: 0.06221294403076172
-Runtime (in seconds) for p = 0.6, E[K] = 5 step: 0.06252384185791016
-Runtime (in seconds) for p = 0.75, E[K] = 4 step: 0.07720279693603516
-Runtime (in seconds) for p = 1, E[K] = 3 step: 0.06057405471801758
-Total runtime in minutes: 0.009949596722920735
+Runtime (in seconds) for p = 0.06, E[K] = 50 step: 34.216973066329956
+Runtime (in seconds) for p = 0.12, E[K] = 25 step: 34.09867596626282
+Runtime (in seconds) for p = 0.167, E[K] = 18 step: 34.04257297515869
+Runtime (in seconds) for p = 0.25, E[K] = 12 step: 34.26605677604675
+Runtime (in seconds) for p = 0.333, E[K] = 9 step: 34.18679618835449
+Runtime (in seconds) for p = 0.429, E[K] = 7 step: 33.86958694458008
+Runtime (in seconds) for p = 0.6, E[K] = 5 step: 34.31929612159729
+Runtime (in seconds) for p = 0.75, E[K] = 4 step: 34.68431115150452
+Runtime (in seconds) for p = 1, E[K] = 3 step: 34.4381959438324
+Total runtime in minutes: 5.13538301785787

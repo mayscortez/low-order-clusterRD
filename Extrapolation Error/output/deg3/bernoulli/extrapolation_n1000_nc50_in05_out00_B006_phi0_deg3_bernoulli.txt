@@ -1,0 +1,10 @@
+Runtime (in seconds) for p = 0.06, E[K] = 50 step: 33.420421838760376
+Runtime (in seconds) for p = 0.12, E[K] = 25 step: 33.72488331794739
+Runtime (in seconds) for p = 0.167, E[K] = 18 step: 33.59624910354614
+Runtime (in seconds) for p = 0.25, E[K] = 12 step: 33.60998177528381
+Runtime (in seconds) for p = 0.333, E[K] = 9 step: 33.205660820007324
+Runtime (in seconds) for p = 0.429, E[K] = 7 step: 33.81130504608154
+Runtime (in seconds) for p = 0.6, E[K] = 5 step: 33.86452603340149
+Runtime (in seconds) for p = 0.75, E[K] = 4 step: 33.613168239593506
+Runtime (in seconds) for p = 1, E[K] = 3 step: 34.01059412956238
+Total runtime in minutes: 5.0476221164067585
