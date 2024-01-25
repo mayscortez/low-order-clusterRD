@@ -40,7 +40,7 @@ def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", type='
     
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['p']
-    x_plot = ['$p$']
+    x_plot = ['treatment probability $p$']
     title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, \phi={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, phi)]
     print(title[0])
     for ind in range(len(x_var)):

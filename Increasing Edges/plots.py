@@ -12,13 +12,13 @@ def main(beta=[1,2,3], B=0.06, p=1, estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop'
     fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','')  # naming convention
     x_label = "incrEdges" + fixed
     x_var = ['Pij', 'global', 'average']
-    x_plot = ['Probability of an edge between 2 communities $p_{out}$',
+    x_plot = ['probability of an edge between 2 communities $p_{\mathrm{out}}$',
               'Global clustering coefficient $\mathcal{C}_\mathrm{global}$',
               'Network Average Clustering Coefficient $\mathcal{C}_\mathrm{avg}$']
     for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, np.round(p,3)),
-                 '$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, np.round(p,3)),
-                 '$\\beta={}, n={}, n_c={}, B={}, p={}, E[d_i]=10$'.format(b, n, nc, B, np.round(p,3))]
+        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3)),
+                 '$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3)),
+                 '$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3))]
         for ind in range(len(x_var)):
             plot(x_var[ind],x_label,b,x_plot[ind],title[ind],estimators)
 
@@ -75,11 +75,11 @@ def plot(x_var,x_label,beta,x_plot,title,estimators):
 
     #ax.set_xlim(0,0.001)
     ax2.set_xlabel(x_plot, fontsize = 18)
-    #ax.set_ylim(-0.75,0.75)
+    ax2.set_ylim(0,5)
     ax2.set_ylabel("MSE", fontsize = 18)
     ax2.set_title(title, fontsize=20)
     handles, labels = ax2.get_legend_handles_labels()
-    ax2.legend(handles=handles, labels=labels, loc='lower right', fontsize = 14)
+    ax2.legend(handles=handles, labels=labels, loc='upper left', fontsize = 14)
     plt.grid()
     plt.tight_layout()
 
@@ -95,13 +95,13 @@ if __name__ == "__main__":
     B = 0.06
     probs = [0.06, 0.25, 1/3, 2/3, 1]    # K in [50, 12, 9, 6, 3] 
     '''
-    beta = [1,2,3]
+    beta = [3]
     B = 0.06
     probs = [1/3]
     
     # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    estimators = ['PI-$\mathcal{U}$($p$)', 'PI-$n$($B$)']
+    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)' ]
 
     for p in probs:
         print('Plotting p: {} (bernoulli design)'.format(p))

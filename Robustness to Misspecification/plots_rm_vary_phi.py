@@ -39,7 +39,7 @@ def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='bo
     
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['Phi']
-    x_plot = ['$\phi$']
+    x_plot = ['covariate balance $\phi$']
     title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, p={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
     for ind in range(len(x_var)):
         plot(my_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
@@ -73,7 +73,7 @@ def plot(my_path, degree, x_var, experiment_label, model, x_plot, title, cluster
         sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', errorbar=None, data=newData, legend='brief', markers=True, palette=color_pal)
 
         #ax.set_xlim(0,0.001)
-        #ax.set_ylim(-0.25,0.75)
+        ax.set_ylim(0,1)
         ax.set_xlabel(x_plot, fontsize = 18)
         ax.set_ylabel("MSE", fontsize = 18)
         ax.set_title(title, fontsize=18)
@@ -116,7 +116,7 @@ if __name__ == "__main__":
     theta_prop = 0.5
     theta_num = 5
     theta = 12 # for deg3, 34; for deg 4, 42    
-    models = [ {'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
+    models = [{'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
             {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
             {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
     B = 0.06
@@ -125,14 +125,14 @@ if __name__ == "__main__":
     cluster_selection = "bernoulli" # other option: "complete"
     type = "both" # other options:  "Bias"   "MSE"   "both"
     
-    lin_nonpara_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
+    lin_nonpara_ests = ['PI-$\mathcal{U}(p;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     linear_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     cluster_ests = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'PI-$\mathcal{U}(p;3)$', 'HT', 'DM-C', 'DM-C($0.75$)'] # which estimators to plot
     for i in range(len(models)):
         print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
         for j in range(len(Piis)):
             for p in probs:
-                main(models[i], B, Piis[j], p, cluster_selection, type, estimators=linear_ests)
+                main(models[i], B, Piis[j], p, cluster_selection, type, estimators=cluster_ests)
         print() 
 
 '''

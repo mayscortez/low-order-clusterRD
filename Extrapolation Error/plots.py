@@ -23,7 +23,7 @@ def main(beta=1, B=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", est
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_phi' + str(np.round(phi,3)).replace('.','') # naming convention
     x_label = [experiment + fixed]
     x_var = ['p']
-    x_plot = ['$p$']
+    x_plot = ['treatment probability $p$']
     title = ['$\\beta={},$ SBM$({},{},{},{}), B={}, \\phi={}$'.format(beta, n, nc, p_in, np.round(p_out,3), B, np.round(phi,3))]
     for ind in range(len(x_var)):
         plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind],estimators)

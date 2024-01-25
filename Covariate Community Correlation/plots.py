@@ -5,6 +5,13 @@ import numpy as np
 import seaborn as sns
 import os
 
+plt.rcParams.update({
+    "text.usetex": True,
+    "font.family": "serif",
+    "font.sans-serif": "Helvetica",
+})
+plt.rcParams["mathtext.fontset"]
+
 def main(beta=1, B=0.06, p=1, p_in = 0.5, cluster_selection = "bernoulli", estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop', 'DM','DM($0.75$)'] ): 
     n = 1000
     nc = 50
@@ -20,8 +27,8 @@ def main(beta=1, B=0.06, p=1, p_in = 0.5, cluster_selection = "bernoulli", estim
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + pstr + '_B' + Bstr # naming convention
     x_label = [experiment + fixed]
     x_var = ['Phi']
-    x_plot = ['$\phi$']
-    title = ['$\\beta={}, SBM({},{},{},{}), B={}, p={}$'.format(beta, n, nc, p_in, p_out, B, np.round(p,3))]
+    x_plot = ['covariate balance $\phi$']
+    title = ['$\\beta={},$ SBM$({},{},{},{}), B={}, p={}$'.format(beta, n, nc, p_in, np.round(p_out,3), B, np.round(p,3))]
     for ind in range(len(x_var)):
         plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind],estimators)
 
@@ -75,12 +82,12 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
     ax2 = fig2.add_subplot(111)
     sns.lineplot(x=x_var, y='Rel_bias_sq', hue='Estimator', style='Estimator', data=newData, errorbar=None, legend='brief', markers=True, palette=color_pal)
 
-    #ax2.set_ylim(0,2)
+    ax2.set_ylim(0,1)
     ax2.set_xlabel(x_plot, fontsize = 18)
     ax2.set_ylabel("MSE", fontsize = 18)
     ax2.set_title(title, fontsize=20)
     handles, labels = ax2.get_legend_handles_labels()
-    ax2.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
+    ax2.legend(handles=handles, labels=labels, loc='upper left', fontsize = 14)
     plt.grid()
     plt.tight_layout()
 
@@ -99,12 +106,12 @@ if __name__ == "__main__":
     beta = [1,2]
     B = [0.06, 0.06] 
     probs = [[0.06, 0.25, 1/3, 2/3, 1], [0.06, 0.25, 1/3, 2/3, 1]]
-    p_in = 0.5
+    p_in = 0.4
     design = "bernoulli"  # bernoulli   complete
     
     # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    estimators = ['PI-$\mathcal{U}$($p$)', 'HT','DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)']
+    estimators = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num']
     
     for b in range(len(beta)):
         print('Plotting degree: {} ({} design)'.format(beta[b], design))
