@@ -11,7 +11,7 @@ plt.rcParams.update({
 })
 plt.rcParams["mathtext.fontset"]
 
-def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='both', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
+def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", plot_type='MSE', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
     model_name = model['name']
     degree = model['degree']
     experiment = 'vary_phi'
@@ -42,9 +42,9 @@ def main(model, B=0.06, p_in=0.5, p=0, cluster_selection = "bernoulli", type='bo
     x_plot = ['covariate balance $\phi$']
     title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, p={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, np.round(p,3))]
     for ind in range(len(x_var)):
-        plot(my_path, degree, x_var[ind],x_label[ind],model_name,x_plot[ind],title[ind], cluster_selection, estimators, type)
+        plot(my_path, x_var[ind],x_label[ind],x_plot[ind],title[ind], estimators, plot_type)
 
-def plot(my_path, degree, x_var, experiment_label, model, x_plot, title, cluster_selection, estimators, type='both'):
+def plot(my_path, x_var, experiment_label, x_plot, title, estimators, plot_type):
     save_path = 'plots/' + my_path  
 
     color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#feba01',
@@ -65,7 +65,7 @@ def plot(my_path, degree, x_var, experiment_label, model, x_plot, title, cluster
 
     plt.rc('text', usetex=True)
     
-    if (type == 'MSE' or type == 'both'):
+    if (plot_type == 'MSE' or plot_type == 'both'):
         # MSE plots
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -87,7 +87,7 @@ def plot(my_path, degree, x_var, experiment_label, model, x_plot, title, cluster
         print("saved: " + save_str)
         plt.close()
 
-    if (type == 'Bias' or type == 'both'):
+    if (plot_type == 'Bias' or plot_type == 'both'):
         # Plot with all the estimators
         fig = plt.figure()
         ax = fig.add_subplot(111)
@@ -123,7 +123,7 @@ if __name__ == "__main__":
     Piis = [0.5]        # edge probability within clusters        
     probs = [0.06, 0.25, 1]   # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete"
-    type = "both" # other options:  "Bias"   "MSE"   "both"
+    plot_type = "MSE" # other options:  "Bias"   "MSE"   "both"
     
     lin_nonpara_ests = ['PI-$\mathcal{U}(p;1)$', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
     linear_ests = ['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)'] # which estimators to plot
@@ -132,7 +132,7 @@ if __name__ == "__main__":
         print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
         for j in range(len(Piis)):
             for p in probs:
-                main(models[i], B, Piis[j], p, cluster_selection, type, estimators=cluster_ests)
+                main(models[i], B, Piis[j], p, cluster_selection, plot_type, estimators=cluster_ests)
         print() 
 
 '''
