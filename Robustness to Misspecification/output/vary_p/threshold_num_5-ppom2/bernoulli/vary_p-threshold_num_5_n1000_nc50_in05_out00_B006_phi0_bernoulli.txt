@@ -1,0 +1,8 @@
+Runtime (in seconds) for p = 0.06 step: 36.71627402305603
+Runtime (in seconds) for p = 0.12 step: 36.37931299209595
+Runtime (in seconds) for p = 0.25 step: 35.45932912826538
+Runtime (in seconds) for p = 0.3333333333333333 step: 34.87745690345764
+Runtime (in seconds) for p = 0.6666666666666666 step: 34.84605097770691
+Runtime (in seconds) for p = 1 step: 34.75190305709839
+
+Total runtime in minutes: 3.5505088686943056
