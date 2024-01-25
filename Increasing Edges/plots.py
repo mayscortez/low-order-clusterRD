@@ -11,14 +11,10 @@ def main(beta=[1,2,3], B=0.06, p=1, estimators = ['PI-$n$($p$)', 'HT', 'LS-Prop'
     
     fixed =  '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','')  # naming convention
     x_label = "incrEdges" + fixed
-    x_var = ['Pij', 'global', 'average']
-    x_plot = ['probability of an edge between 2 communities $p_{\mathrm{out}}$',
-              'Global clustering coefficient $\mathcal{C}_\mathrm{global}$',
-              'Network Average Clustering Coefficient $\mathcal{C}_\mathrm{avg}$']
+    x_var = ['Pij'] # x_var = ['Pij', 'global', 'average']
+    x_plot = ['probability of an edge between 2 communities $p_{\mathrm{out}}$'] # , 'Global clustering coefficient $\mathcal{C}_\mathrm{global}$', 'Network Average Clustering Coefficient $\mathcal{C}_\mathrm{avg}$']
     for b in beta:
-        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3)),
-                 '$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3)),
-                 '$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3))]
+        title = ['$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3))]#, '$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3)), '$\\beta={}, n={}, n_c={}, B={}, p={}$'.format(b, n, nc, B, np.round(p,3))]
         for ind in range(len(x_var)):
             plot(x_var[ind],x_label,b,x_plot[ind],title[ind],estimators)
 
