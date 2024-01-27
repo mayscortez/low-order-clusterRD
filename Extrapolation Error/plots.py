@@ -11,7 +11,7 @@ plt.rcParams.update({
 })
 plt.rcParams["mathtext.fontset"]
 
-def main(beta=1, B=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", estimators = ['PI-$n$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num'], plot_type="MSE"): 
+def main(beta=1, p=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", estimators = ['PI-$n$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($p$)', 'LS-Prop', 'LS-Num'], plot_type="MSE"): 
     n = 1000
     nc = 50
     p_out = (0.5-p_in)/49
@@ -20,11 +20,11 @@ def main(beta=1, B=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", est
     
     experiment = 'extrapolation'
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_phi' + str(np.round(phi,3)).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') + '_phi' + str(np.round(phi,3)).replace('.','') # naming convention
     x_label = [experiment + fixed]
-    x_var = ['p']
-    x_plot = ['treatment probability $p$']
-    title = ['$\\beta={},$ SBM$({},{},{},{}), B={}, \\phi={}$'.format(beta, n, nc, p_in, np.round(p_out,3), B, np.round(phi,3))]
+    x_var = ['q']
+    x_plot = ['treatment probability $q$']
+    title = ['$\\beta={},$ SBM$({},{},{},{}), p={}, \\phi={}$'.format(beta, n, nc, p_in, np.round(p_out,3), p, np.round(phi,3))]
     for ind in range(len(x_var)):
         plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind],estimators,plot_type)
 
@@ -32,12 +32,14 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
     save_path = 'plots/' + 'deg' + str(model) + '/' + cluster_selection_RD + '/'
     deg_str = '_deg' + str(model)
     
-    color_map = {'PI-$n$($p$)': '#2596be', 
-                 'PI-$\mathcal{U}$($p$)': '#1b45a6',
+    color_map = {'PI-$n$($q$)': '#2596be', 
+                 'PI-$\mathcal{U}$($q$)': '#1b45a6',
                  'HT': '#e51e31', 
                  'DM-C': '#fb5082', 
                  'DM-C($0.75$)': '#ff7787',
-                 'PI-$n$($B$)': '#ff7f0e',
+                 'E[PI-$n(q)|\mathcal{U}$]': '#34a10d',
+                 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]': '#0b520d',
+                 'PI-$n$($p$)': '#ff7f0e',
                  'LS-Prop': '#2ca02c',
                  'LS-Num': '#9467bd',
                  'DM': '#2ca02c',
@@ -99,16 +101,17 @@ if __name__ == "__main__":
     B = [0.06] 
     phis = [0, 0.25, 0.5]
     '''
-    beta = [3]
-    B = 0.06
+    beta = [2]
+    budget = 0.06
     phis = [0, 0.5]
-    p_in = 0.5
+    p_in = 0.35
     design = "bernoulli"  # options: "complete" or "bernoulli"
     
-    # All possible estimators: ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    # All possible estimators: ['PI-$n$($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)' , 'E[PI-$n(q)|\mathcal{U}$]', 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]', 'PI-$n$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    #estimators = ['PI-$n$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)']
-    estimators = ['PI-$n$($p$)', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($B$)']
+    #estimators = ['PI-$n$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($p$)']
+    estimators = ['PI-$n$($q$)', 'E[PI-$n(q)|\mathcal{U}$]']
+    #estimators = ['PI-$\mathcal{U}$($q$)', 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]']
 
     plot_type = "Bias"  #option: MSE, Bias, both
 
@@ -116,4 +119,4 @@ if __name__ == "__main__":
         print('Plotting degree: {} ({} design)'.format(beta[b], design))
         for phi in phis:
             print()
-            main(beta[b], B, phi, p_in, design, estimators, plot_type)
+            main(beta[b], budget, phi, p_in, design, estimators, plot_type)
