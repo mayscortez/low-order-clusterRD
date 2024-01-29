@@ -17,7 +17,7 @@ models = [{'type': 'ppom', 'degree':1, 'name':'ppom1', 'params': []},
             {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []},
             {'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
             {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
-            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta, 'num']}]
+            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
 Piis = [0.5, 0.01]
 Pijs = [0, 0.01]
 phis = [0, 0.1, 0.2, 0.3, 0.4, 0.5] 
@@ -25,15 +25,19 @@ phis = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
 theta_prop = 0.5
 theta_num = 5
 theta = 12
-models = [{'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
-          {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
-          {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta, 'num']}]
-B = 0.06
-Piis = [0.5]
-phis = [0, 0.1, 0.2, 0.3, 0.4, 0.5] 
+models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
+            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []},
+            {'type': 'ppom', 'degree':4, 'name': 'ppom4', 'params': []},
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
+            {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
+            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
+budget = 0.06
+Piis = [0.01]
+phis = [0,0.5] 
 design = "bernoulli"  # bernoulli   complete
-graphNum = 30 
-T = 30
+graphNum = 25 
+T = 5
+U = 25
 
 for i in range(len(models)):
     print()
@@ -47,4 +51,4 @@ for i in range(len(models)):
         for phi in phis:
             print('phi = {}'.format(phi))
             print('--------------------------------------------')
-            main(models[i], graphNum, T, B, phi, Piis[j], design)
+            main(models[i], graphNum, T, U, budget, phi, Piis[j], design)

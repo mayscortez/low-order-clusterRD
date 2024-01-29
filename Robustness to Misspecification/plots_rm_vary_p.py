@@ -11,14 +11,14 @@ plt.rcParams.update({
 })
 plt.rcParams["mathtext.fontset"]
 
-def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", plot_type='MSE', estimators=['PI-$\mathcal{U}(p;1)$','PI-$n(B;1)$', 'LS-Prop(1)', 'LS-Num(1)']): 
+def main(model, p=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", plot_type='MSE', estimators=['PI$(q;1)$', 'E[PI$(q;1)|\mathcal{U}$]']): 
     degree = model['degree']
     model_name = model['name']
     experiment = 'vary_p'
     if model["type"] == 'ppom':
-        my_path = 'output/' + experiment + '/'  + model_name + '/' + cluster_selection + '/' 
+        my_path = experiment + '/'  + model_name + '/' + cluster_selection + '/' 
     else:            
-        my_path = 'output/' + experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'           
+        my_path = experiment + '/'  + model_name + '-ppom' + str(degree) + '/' + cluster_selection + '/'           
 
     n = 1000
     nc = 50
@@ -36,12 +36,12 @@ def main(model, B=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", plot_t
         raise ValueError("Model type is invalid.")
 
 
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_B' + str(B).replace('.','') + '_phi' + str(phi).replace('.','') # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') + '_phi' + str(phi).replace('.','') # naming convention
     
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
-    x_var = ['p']
-    x_plot = ['treatment probability $p$']
-    title = ['True Model: {} with $\\beta={}$ \n SBM$({},{},{},{}), B={}, \phi={}$'.format(name, degree, n, nc, np.round(p_in,3), np.round(p_out,3), B, phi)]
+    x_var = ['q']
+    x_plot = ['treatment probability $q$']
+    title = ['True Model: {} with $\\beta={}$ \n ER$({},{}), p={}, \phi={}$'.format(name, degree, n, np.round(p_in,3), p, phi)]
     print(title[0])
     for ind in range(len(x_var)):
         plot(my_path, x_var[ind],x_label[ind],x_plot[ind],title[ind],estimators, plot_type)
@@ -58,7 +58,26 @@ def plot(my_path, x_var, experiment_label, x_plot, title, estimators, plot_type=
                  'LS-Num(1)': '#46c1c1', 'LS-Num(2)': '#3e66c9', 'LS-Num(3)': '#c42796', 
                  'DM': '#9e35af', 'DM($0.75$)': '#c069c9'}
     
-    color_pal = [color_map[est] for est in estimators]
+    og_color_map = {'PI$(q;1)$': '#e20287', 'PI$(q;2)$':'#97015a', 'PI$(q;3)$': '#fd67c0',
+                 'PI-$\mathcal{U}(q;1)$': '#0d7901', 'PI-$\mathcal{U}(q;2)$': '#5bd94e', 'PI-$\mathcal{U}(q;3)$': '#085001', 
+                 'HT': '#1100ff',
+                 'DM-C': '#990002', 'DM-C($0.75$)': '#5f0099',
+                 'E[PI$(q;1)|\mathcal{U}$]': '#ffc900', 'E[PI$(q;2)|\mathcal{U}$]': '#b38d00', 'E[PI$(q;3)|\mathcal{U}$]': '#9aa1e9', 
+                 'E[PI-$\mathcal{U}(q;1)|\mathcal{U}$]': '#0215c9', 'E[PI-$\mathcal{U}(q;2)|\mathcal{U}$]': '#4e5bd9', 'E[PI-$\mathcal{U}(q;3)|\mathcal{U}$]': '#010f8d',
+                 'PI$(p;1)$': '#0296fb', 'PI$(p;2)$': '#4eb6fc', 'PI$(p;3)$': '#0169b0',
+                 'LS-Prop(1)': '#fb6702', 'LS-Prop(2)': '#fb6702', 'LS-Prop(3)': '#fb6702',
+                 'LS-Num(1)': '#15c902', 'LS-Num(2)': '#15c902', 'LS-Num(3)': '#15c902', 
+                 'DM': '#ff0004', 'DM($0.75$)': '#9e00ff'}
+    
+    original_color_map = {'PI($p$)': '#1e77b4',
+                'PI($k/n$)': '#1e81b0',
+                'PI($\hat{k}/n$)': '#38b01e',
+                'LS-Prop': '#fe8e29',
+                'LS-Num': '#2ca02b',
+                'DM': '#d62727',
+                'DM($0.75$)':'#9368bd'}
+    
+    color_pal = [og_color_map[est] for est in estimators]
 
     print('\n'+experiment_label+'_'+'vary-'+x_var)
 
@@ -119,21 +138,20 @@ if __name__ == "__main__":
     theta_prop = 0.5
     theta_num = 5
     theta = 12 # for deg3, 34; for deg 4, 42
-    models = [{'type': 'threshold', 'degree': 2, 'name': 'threshold_prop_' + str(theta_prop).replace(".", ""), 'params': [theta_prop, 'prop']},
-            {'type': 'threshold', 'degree': 2, 'name': 'threshold_num_' + str(theta_num), 'params': [theta_num, 'num']},
-            {'type': 'saturation', 'degree': 2, 'name': 'saturation_' + str(theta), 'params': [theta]}]
-    B = 0.06        
-    Piis = [0.5]    # edge probability within clusters
-    phis = [0, 0.5] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
+    models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
+            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []}]
+    budget = 0.06        
+    Piis = [0.01]    # edge probability within clusters
+    phis = [0] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete" (for how to choose clusters)
-    plot_type = "MSE"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
-    estimators = ['PI-$\mathcal{U}(p;1)$', 'PI-$\mathcal{U}(p;2)$', 'HT', 'DM-C', 'DM-C($0.75$)']   # which estimators to plot
+    plot_type = "Bias"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
+    estimators = ['PI$(q;1)$', 'E[PI$(q;1)|\mathcal{U}$]']   # which estimators to plot
 
     for i in range(len(models)):
         print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))
         for j in range(len(Piis)):
             for phi in phis:
-                main(models[i], B, Piis[j], phi, cluster_selection, plot_type, estimators)
+                main(models[i], budget, Piis[j], phi, cluster_selection, plot_type, estimators)
         print() 
 
 '''
