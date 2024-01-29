@@ -11,14 +11,14 @@ beta = [1,2,3]
 B = 0.06
 phis = [0, 0.25, 0.5]
 '''
-beta = [2]
+beta = [4]
 budget = 0.06 
-phis = [0, 0.5]
+phis = [0]
 design = "bernoulli" # options: "complete" or "bernoulli"
-p_in = 0.35
-graphNum = 30 
+p_in = 0.01
+graphNum = 25 
 T = 5
-U = 30
+U = 25
 
 for b in range(len(beta)):
     print('============================================================================================')

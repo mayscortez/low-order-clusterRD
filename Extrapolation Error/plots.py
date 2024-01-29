@@ -24,7 +24,8 @@ def main(beta=1, p=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", est
     x_label = [experiment + fixed]
     x_var = ['q']
     x_plot = ['treatment probability $q$']
-    title = ['$\\beta={},$ SBM$({},{},{},{}), p={}, \\phi={}$'.format(beta, n, nc, p_in, np.round(p_out,3), p, np.round(phi,3))]
+    # SBM$({},{},{},{})
+    title = ['$\\beta={},$ ER$({},{}), p={}, \\phi={}$'.format(beta, n, p_in, p, np.round(phi,3))]
     for ind in range(len(x_var)):
         plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind],estimators,plot_type)
 
@@ -69,7 +70,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
         ax.set_ylabel("Relative Bias", fontsize = 18)
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
+        ax.legend(handles=handles, labels=labels, loc='upper left', fontsize = 14)
         plt.grid()
         plt.tight_layout()
 
@@ -101,10 +102,10 @@ if __name__ == "__main__":
     B = [0.06] 
     phis = [0, 0.25, 0.5]
     '''
-    beta = [2]
+    beta = [1,2,3,4]
     budget = 0.06
-    phis = [0, 0.5]
-    p_in = 0.35
+    phis = [0]
+    p_in = 0.01
     design = "bernoulli"  # options: "complete" or "bernoulli"
     
     # All possible estimators: ['PI-$n$($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)' , 'E[PI-$n(q)|\mathcal{U}$]', 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]', 'PI-$n$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']

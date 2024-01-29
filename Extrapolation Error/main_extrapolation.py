@@ -90,7 +90,7 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
     
     offdiag = r*diag   # maximum norm of indirect effect
 
-    dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'Phi': phi, 'q': q, 'p': p, 'EK': EK, 'ratio': r}
+    dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': np.round(Pij,3), 'Phi': phi, 'q': np.round(q,3), 'p': p, 'EK': EK, 'ratio': r}
 
     # Cluster Randomized Design Estimators
     estimators_clusterRD = []
@@ -131,6 +131,7 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
 
         # compute the true TTE
         TTE = 1/n * np.sum((fy(np.ones(n)) - fy(np.zeros(n))))
+        dict_base.update({'TTE': np.round(TTE,5)})
         
         ####### Estimate ########
 
@@ -156,6 +157,8 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
 
             dict_base.update({'rep_U': i, 'design': 'Cluster', 'K': K_real})
 
+            TTE_hat_n = np.zeros(T)
+            TTE_hat_U = np.zeros(T)
             for j in range(T):
                 dict_base.update({'rep_z': j})
                 # Cluster Randomized Design
@@ -164,15 +167,13 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
                 y = fy(z)
                 sums, sums_U = outcome_sums(n, fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
-                TTE_hat_n = np.zeros(U)
-                TTE_hat_U = np.zeros(U)
                 for x in range(len(estimators_clusterRD)):
                     if realized:
                         bias_correction = 1 - (1-(EK/nc))**nc
                         est = estimators_clusterRD[x]((K_real/nc)*bias_correction,y,z,sums,H,sums_U)
                     else:
                         est = estimators_clusterRD[x](EK/nc,y,z,sums,H,sums_U)
-                    dict_base.update({'Estimator': alg_names_clusterRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
+                    dict_base.update({'Estimator': alg_names_clusterRD[x], 'est': np.round(est,5), 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                     results.append(dict_base.copy())
                     
                     # Save polynomial interpolation TTE estimates
@@ -188,12 +189,15 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
                         raise ValueError('The estimator {} returned an invalid value {}'.format(alg_names_clusterRD[x], est))
 
             # Compute conditional expectations E[TTE_hat | U]
-            conditional_E = np.sum(TTE_hat_n)/U
-            dict_base.update({'Estimator': 'E[PI-$n(q)|\mathcal{U}$]', 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
+            conditional_E = np.sum(TTE_hat_n)/T
+            dict_base.update({'Estimator': 'E[PI-$n(q)|\mathcal{U}$]', 'est': np.round(est,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
             results.append(dict_base.copy())
 
-            conditional_E = np.sum(TTE_hat_U)/U
-            dict_base.update({'Estimator': 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]', 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
+            #conditional_Var = np.sum(np.power(TTE_hat_n - T, 2))/T
+            #dict_base.update({'Estimator': 'Var[PI-$n(q)|\mathcal{U}$]', 'Bias': (conditional_Var-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
+
+            conditional_E = np.sum(TTE_hat_U)/T
+            dict_base.update({'Estimator': 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]', 'est': np.round(est,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
             results.append(dict_base.copy())
 
             # Bernoulli Randomized Design (No Clusters)
@@ -205,7 +209,7 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
 
             for x in range(len(estimators_bernRD)):
                 est = estimators_bernRD[x](y_bern,z_bern,sums_bern,H_bern) # have it include both the parameters for all as well as just U
-                dict_base.update({'Estimator': alg_names_bernRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
+                dict_base.update({'Estimator': alg_names_bernRD[x], 'est': np.round(est,5), 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
 
     return results
