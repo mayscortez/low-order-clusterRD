@@ -5,9 +5,9 @@ import numpy as np
 import seaborn as sns
 import os
 plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "serif",
-    "font.sans-serif": "Helvetica",
+    "text.usetex": True#,
+    #"font.family": "serif",
+    #"font.sans-serif": "Helvetica",
 })
 plt.rcParams["mathtext.fontset"]
 
@@ -15,6 +15,11 @@ def main(beta=1, p=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", est
     n = 1000
     nc = 50
     p_out = (0.5-p_in)/49
+
+    if p_out == p_in:
+        graph = 'ER'
+    else:
+        graph = 'SBM'
 
     load_path = 'output/' + 'deg' + str(beta) + '/' + cluster_selection + '/'
     
@@ -24,8 +29,7 @@ def main(beta=1, p=0.06, phi=1, p_in = 0.5, cluster_selection = "bernoulli", est
     x_label = [experiment + fixed]
     x_var = ['q']
     x_plot = ['treatment probability $q$']
-    # SBM$({},{},{},{})
-    title = ['$\\beta={},$ ER$({},{}), p={}, \\phi={}$'.format(beta, n, p_in, p, np.round(phi,3))]
+    title = ['$\\beta={}$'.format(beta)] #title = ['$\\beta={},$ {}$, \\phi={}$'.format(beta, graph, np.round(phi,3))]
     for ind in range(len(x_var)):
         plot(load_path,cluster_selection,x_var[ind],x_label[ind],beta,x_plot[ind],title[ind],estimators,plot_type)
 
@@ -33,18 +37,18 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
     save_path = 'plots/' + 'deg' + str(model) + '/' + cluster_selection_RD + '/'
     deg_str = '_deg' + str(model)
     
-    color_map = {'PI-$n$($q$)': '#2596be', 
-                 'PI-$\mathcal{U}$($q$)': '#1b45a6',
-                 'HT': '#e51e31', 
-                 'DM-C': '#fb5082', 
-                 'DM-C($0.75$)': '#ff7787',
-                 'E[PI-$n(q)|\mathcal{U}$]': '#34a10d',
-                 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]': '#0b520d',
-                 'PI-$n$($p$)': '#ff7f0e',
-                 'LS-Prop': '#2ca02c',
-                 'LS-Num': '#9467bd',
-                 'DM': '#2ca02c',
-                 'DM($0.75$)':'#7f7f7f'}
+    color_map = {'PI($q$)': '#0296fb', 
+                 'PI-$\mathcal{U}$($q$)': '#0d7901',
+                 'HT': '#1100ff', 
+                 'DM-C': '#990002', 
+                 'DM-C($0.75$)': '#5f0099',
+                 'E[PI$(q)|\mathcal{U}$]': '#e20287', #e20287
+                 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]': '#ffc900',
+                 'PI($p$)': '#0296fb',
+                 'LS-Prop': '#fb6702',
+                 'LS-Num': '#15c902',
+                 'DM': '#ff0004',
+                 'DM($0.75$)':'#9e00ff'}
     color_pal = [color_map[est] for est in estimators]
     
     experiment = x_label
@@ -53,6 +57,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
     # Create and save plots
     full_path = load_path + experiment + deg_str + '_' + cluster_selection_RD + '-full.csv'
     df = pd.read_csv(full_path)
+    df = df.assign(Estimator = lambda df: df.Estimator.replace({'PI-$n$($q$)':'PI($q$)', 'E[PI-$n(q)|\mathcal{U}$]': 'E[PI$(q)|\mathcal{U}$]', 'PI-$n$($p$)':'PI($p$)'}))
     newData = df.loc[df['Estimator'].isin(estimators)]
 
     plt.rc('text', usetex=True)
@@ -71,7 +76,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles=handles, labels=labels, loc='upper left', fontsize = 14)
-        plt.grid()
+        #plt.grid()
         plt.tight_layout()
 
         plt.savefig(save_path + experiment + deg_str + '_' + cluster_selection_RD + '.png')
@@ -89,7 +94,7 @@ def plot(load_path,cluster_selection_RD,x_var,x_label,model,x_plot,title,estimat
         ax2.set_title(title, fontsize=20)
         handles, labels = ax2.get_legend_handles_labels()
         ax2.legend(handles=handles, labels=labels, loc='center right', fontsize = 14)
-        plt.grid()
+        #plt.grid()
         plt.tight_layout()
 
         plt.savefig(save_path + experiment + deg_str + '_' + cluster_selection_RD + '_MSE.png')
@@ -104,15 +109,13 @@ if __name__ == "__main__":
     '''
     beta = [1,2,3,4]
     budget = 0.06
-    phis = [0]
-    p_in = 0.01
+    phis = [0,0.5]
+    p_in = 0.4
     design = "bernoulli"  # options: "complete" or "bernoulli"
     
-    # All possible estimators: ['PI-$n$($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)' , 'E[PI-$n(q)|\mathcal{U}$]', 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]', 'PI-$n$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    # All possible estimators: [ 'E[PI$(q)|\mathcal{U}$]', 'PI($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
     # Note: for colors to match in each plot, the estimator names should be in the same relative order as above
-    #estimators = ['PI-$n$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)', 'PI-$n$($p$)']
-    estimators = ['PI-$n$($q$)', 'E[PI-$n(q)|\mathcal{U}$]']
-    #estimators = ['PI-$\mathcal{U}$($q$)', 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]']
+    estimators = ['E[PI$(q)|\mathcal{U}$]', 'PI($q$)']
 
     plot_type = "Bias"  #option: MSE, Bias, both
 

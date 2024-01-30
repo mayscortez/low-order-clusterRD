@@ -5,9 +5,9 @@ import numpy as np
 import seaborn as sns
 import os
 plt.rcParams.update({
-    "text.usetex": True,
-    "font.family": "serif",
-    "font.sans-serif": "Helvetica",
+    "text.usetex": True#,
+    #"font.family": "serif",
+    #"font.sans-serif": "Helvetica",
 })
 plt.rcParams["mathtext.fontset"]
 
@@ -41,7 +41,7 @@ def main(model, p=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", plot_t
     x_label = [experiment + '-' + model_name + fixed + '_' +  cluster_selection]
     x_var = ['q']
     x_plot = ['treatment probability $q$']
-    title = ['True Model: {} with $\\beta={}$ \n ER$({},{}), p={}, \phi={}$'.format(name, degree, n, np.round(p_in,3), p, phi)]
+    title = ['True Model: {} with $\\beta={}$'.format(name, degree)] # \n ER$({},{}), p={}, \phi={}$
     print(title[0])
     for ind in range(len(x_var)):
         plot(my_path, x_var[ind],x_label[ind],x_plot[ind],title[ind],estimators, plot_type)
@@ -49,7 +49,7 @@ def main(model, p=0.06, p_in=0.5, phi=0, cluster_selection = "bernoulli", plot_t
 def plot(my_path, x_var, experiment_label, x_plot, title, estimators, plot_type='both'):
     save_path = 'plots/' + my_path
 
-    color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#feba01',
+    color_map = {'PI-$n(p;1)$': '#6a9f00', 'PI-$n(p;2)$':'#b2ce02', 'PI-$n(p;3)$': '#69cc00',
                  'PI-$\mathcal{U}(p;1)$': '#1b45a6', 'PI-$\mathcal{U}(p;2)$': '#019cca', 'PI-$\mathcal{U}(p;3)$': '#009d9d', 
                  'HT': '#e51e31',
                  'DM-C': '#e35610', 'DM-C($0.75$)': '#ff7787', #'DM-C': '#fb5082'
@@ -58,12 +58,10 @@ def plot(my_path, x_var, experiment_label, x_plot, title, estimators, plot_type=
                  'LS-Num(1)': '#46c1c1', 'LS-Num(2)': '#3e66c9', 'LS-Num(3)': '#c42796', 
                  'DM': '#9e35af', 'DM($0.75$)': '#c069c9'}
     
-    og_color_map = {'PI$(q;1)$': '#e20287', 'PI$(q;2)$':'#97015a', 'PI$(q;3)$': '#fd67c0',
+    og_color_map = {'PI$(q;1)$': '#0083ff', 'PI$(q;2)$':'#ff0083', 'PI$(q;3)$': '#83ff00',
                  'PI-$\mathcal{U}(q;1)$': '#0d7901', 'PI-$\mathcal{U}(q;2)$': '#5bd94e', 'PI-$\mathcal{U}(q;3)$': '#085001', 
                  'HT': '#1100ff',
                  'DM-C': '#990002', 'DM-C($0.75$)': '#5f0099',
-                 'E[PI$(q;1)|\mathcal{U}$]': '#ffc900', 'E[PI$(q;2)|\mathcal{U}$]': '#b38d00', 'E[PI$(q;3)|\mathcal{U}$]': '#9aa1e9', 
-                 'E[PI-$\mathcal{U}(q;1)|\mathcal{U}$]': '#0215c9', 'E[PI-$\mathcal{U}(q;2)|\mathcal{U}$]': '#4e5bd9', 'E[PI-$\mathcal{U}(q;3)|\mathcal{U}$]': '#010f8d',
                  'PI$(p;1)$': '#0296fb', 'PI$(p;2)$': '#4eb6fc', 'PI$(p;3)$': '#0169b0',
                  'LS-Prop(1)': '#fb6702', 'LS-Prop(2)': '#fb6702', 'LS-Prop(3)': '#fb6702',
                  'LS-Num(1)': '#15c902', 'LS-Num(2)': '#15c902', 'LS-Num(3)': '#15c902', 
@@ -100,8 +98,8 @@ def plot(my_path, x_var, experiment_label, x_plot, title, estimators, plot_type=
         ax.set_ylabel("MSE", fontsize = 18)
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles=handles, labels=labels, loc='lower left', fontsize = 14)
-        plt.grid()
+        ax.legend(handles=handles, labels=labels, loc='upper left', fontsize = 14)
+        #plt.grid()
         plt.tight_layout()
 
         save_str = save_path + experiment_label + '_MSE.png'
@@ -117,13 +115,13 @@ def plot(my_path, x_var, experiment_label, x_plot, title, estimators, plot_type=
         sns.lineplot(x=x_var, y='Bias', hue='Estimator', style='Estimator', errorbar='sd', data=newData, legend='brief', markers=True, palette=color_pal)
 
         #ax.set_xlim(0,0.001)
-        #ax.set_ylim(-2,4)
+        ax.set_ylim(-2,2)
         ax.set_xlabel(x_plot, fontsize = 18)
         ax.set_ylabel("Relative Bias", fontsize = 18)
         ax.set_title(title, fontsize=18)
         handles, labels = ax.get_legend_handles_labels()
         ax.legend(handles=handles, labels=labels, loc='upper right', fontsize = 14)
-        plt.grid()
+        #plt.grid()
         plt.tight_layout()
 
         save_str = save_path + experiment_label + '.png'
@@ -138,14 +136,13 @@ if __name__ == "__main__":
     theta_prop = 0.5
     theta_num = 5
     theta = 12 # for deg3, 34; for deg 4, 42
-    models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []},
-            {'type': 'ppom', 'degree':3, 'name': 'ppom3', 'params': []}]
+    models = [{'type': 'ppom', 'degree':2, 'name': 'ppom2', 'params': []}]
     budget = 0.06        
-    Piis = [0.01]    # edge probability within clusters
-    phis = [0] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
+    Piis = [0.4]    # edge probability within clusters
+    phis = [0,0.5] # covariate balance parameter (phi = 0 is exact homophily, phi = 0.5 is no homophily)
     cluster_selection = "bernoulli" # other option: "complete" (for how to choose clusters)
-    plot_type = "Bias"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
-    estimators = ['PI$(q;1)$', 'E[PI$(q;1)|\mathcal{U}$]']   # which estimators to plot
+    plot_type = "MSE"   # other options:  "Bias"   "MSE" (what type of plot do you want to make)
+    estimators = ['PI$(q;1)$', 'PI$(q;2)$', 'PI$(q;3)$']   # which estimators to plot
 
     for i in range(len(models)):
         print('Plotting for true model: {} ({} design)'.format(models[i]['name'],cluster_selection))

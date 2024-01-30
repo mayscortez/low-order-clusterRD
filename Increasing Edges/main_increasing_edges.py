@@ -10,7 +10,7 @@ import random
 import time
 from myFunctions_edges import *
 
-def main(beta, graphNum, T, B=0.06, p=1, cluster_selection_RD = "bernoulli"):
+def main(beta, graphNum, T, p=0.06, q=1, cluster_selection_RD = "bernoulli"):
     deg_str = '_deg' + str(beta)  # naming convention
     save_path = 'output/' + 'deg' + str(beta) + '/'                    
     
@@ -18,10 +18,9 @@ def main(beta, graphNum, T, B=0.06, p=1, cluster_selection_RD = "bernoulli"):
     n = 1000            # number of nodes
     nc = 50             # number of communities
 
-    K_expected = int(B * nc / p)   # if complete design, this is actual number of chosen clusters; if Bernoulli this is expected number of chosen clusters
-    q_expected = K_expected/nc 
+    K_expected = int(p * nc / q)   # if complete design, this is actual number of chosen clusters; if Bernoulli this is expected number of chosen clusters
     
-    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'B' + str(B).replace('.','') + '_p' + str(np.round(p,3)).replace('.','')  # naming convention
+    fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'p' + str(p).replace('.','') + '_q' + str(np.round(q,3)).replace('.','')  # naming convention
     
     f = open(save_path +'incr_edges' + fixed + deg_str + '_' + cluster_selection_RD + '.txt', 'w') # e.g filename could be incr_edges_n10000_nc4_B025_K1_deg2.txt  
     
@@ -41,7 +40,7 @@ def main(beta, graphNum, T, B=0.06, p=1, cluster_selection_RD = "bernoulli"):
         print("p_in = {} and p_out = {}".format(p_in, p_out))
         startTime2 = time.time()
 
-        results.extend(run_experiment(beta, n, nc, B, p, r, diag, p_in, p_out, cluster_selection_RD, q_expected, K_expected, graphNum, T, graphStr))
+        results.extend(run_experiment(beta, n, nc, p, q, r, diag, p_in, p_out, cluster_selection_RD, K_expected, graphNum, T, graphStr))
 
         executionTime = (time.time() - startTime2)
         print('Runtime (in seconds) for (p_in,p_out) = ({},{}) step: {}'.format(p_in, p_out,executionTime),file=f)
@@ -57,7 +56,7 @@ def main(beta, graphNum, T, B=0.06, p=1, cluster_selection_RD = "bernoulli"):
     
 
 
-def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, design, Eq, EK, graphNum, T, graphStr, p_prime=0, realized=True):
+def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, design, EK, graphNum, T, graphStr, p_prime=0, realized=True):
     '''
     n = population size
     nc = number of clusters
@@ -78,17 +77,17 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, design, Eq, EK, 
 
     unitsPercluster = n/nc
     edges_out_over_in = (Pij*(EK-1)*unitsPercluster) / (Pii*EK*unitsPercluster) # ratio of expected number of edges within cluster : outside cluster for each unit
-    dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'B': B, 'p': target_p, 'EK': EK, 'Eq': Eq, 'ratio': r, 'out-in': edges_out_over_in}
+    dict_base = {'n': n, 'nc': nc, 'Pii': Pii, 'Pij': Pij, 'p': p, 'q': q, 'EK': EK, 'ratio': r, 'out-in': edges_out_over_in}
 
     # Cluster Randomized Design Estimators
     estimators_clusterRD = []
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: PI(n*q,sums,H_m))             # estimator looks at all [n]
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: PI(n*q,sums_U,H_m))           # estimator only looking at [U]
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, Eq, target_p))  
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: DM_naive(y,z))                 # difference in means 
-    estimators_clusterRD.append(lambda q,y,z,sums,H_m,sums_U: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
+    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: PI(n*x,sums,H_m))             # estimator looks at all [n]
+    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: PI(n*x,sums_U,H_m))           # estimator only looking at [U]
+    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, EK/nc, q))  
+    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: DM_naive(y,z))                 # difference in means 
+    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
-    alg_names_clusterRD = ['PI-$n$($p$)', 'PI-$\mathcal{U}$($p$)', 'HT', 'DM-C', 'DM-C($0.75$)']
+    alg_names_clusterRD = ['PI($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)']
 
     # Bernoulli Randomized Design Estimators
     estimators_bernRD = []
@@ -98,7 +97,7 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, design, Eq, EK, 
     estimators_bernRD.append(lambda y,z,sums,H_m: DM_naive(y,z))                 # difference in means 
     estimators_bernRD.append(lambda y,z,sums,H_m: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
-    alg_names_bernRD = ['PI-$n$($B$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    alg_names_bernRD = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
     G, A = SBM(n, nc, Pii, Pij)  #returns the SBM networkx graph object G and the corresponding adjacency matrix A
 
@@ -128,12 +127,12 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, design, Eq, EK, 
         ####### Estimate ########
 
         # parameters for the staggered rollout - Cluster Randomized Design
-        P = seq_treatment_probs(beta, target_p)        # treatment probabilities for each step of the staggered rollout on U
+        P = seq_treatment_probs(beta, q)        # treatment probabilities for each step of the staggered rollout on U
         P_prime = seq_treatment_probs(beta, 0)  # treatment probabilities for each step of the staggered rollout on the boundary of U
         H = bern_coeffs(P)                      # coefficients for the polynomial interpolation estimator
 
         # parameters for the staggered rollout - Bernoulli Randomized Design
-        P_bernRD = seq_treatment_probs(beta, B) # treatment probabilities for each step of the staggered rollout on [n]
+        P_bernRD = seq_treatment_probs(beta, p) # treatment probabilities for each step of the staggered rollout on [n]
         H_bern = bern_coeffs(P_bernRD)          # coefficients for the polynomial interpolation estimator
 
         for i in range(T):
@@ -141,15 +140,13 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, design, Eq, EK, 
             if design == "complete":
                 selected = select_clusters_complete(nc, EK)
                 K_real = EK
-                q_real = Eq
             else:
-                selected = select_clusters_bernoulli(nc, Eq)
+                selected = select_clusters_bernoulli(nc, EK/nc)
                 K_real = len(selected)
-                q_real = K_real/nc
 
             selected_nodes = [x for x,y in G.nodes(data=True) if (y['block'] in selected)] # get the nodes in selected clusters
 
-            dict_base.update({'rep': i, 'design': 'Cluster', 'K': K_real, 'q': q_real})
+            dict_base.update({'rep': i, 'design': 'Cluster', 'K': K_real, 'q': K_real/nc})
 
             # Cluster Randomized Design
             Z = staggered_rollout_bern_clusters(n, selected_nodes, P, [], P_prime)
@@ -159,10 +156,10 @@ def run_experiment(beta, n, nc, B, target_p, r, diag, Pii, Pij, design, Eq, EK, 
 
             for x in range(len(estimators_clusterRD)):
                 if realized:
-                    bias_correction = 1 - (1-Eq)**nc
-                    est = estimators_clusterRD[x](q_real*bias_correction,y,z,sums,H,sums_U)
+                    bias_correction = 1 - (1-(EK/nc))**nc
+                    est = estimators_clusterRD[x]((K_real/nc)*bias_correction,y,z,sums,H,sums_U)
                 else:
-                    est = estimators_clusterRD[x](Eq,y,z,sums,H,sums_U)
+                    est = estimators_clusterRD[x](EK/nc,y,z,sums,H,sums_U)
                 dict_base.update({'Estimator': alg_names_clusterRD[x], 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                 results.append(dict_base.copy())
 

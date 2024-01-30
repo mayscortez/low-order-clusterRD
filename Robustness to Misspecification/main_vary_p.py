@@ -198,12 +198,6 @@ def run_experiment(model, n, nc, p, q, Pii, Pij, phi, design, EK, graphNum, T, U
 
             dict_base.update({'rep_U': i, 'design': 'Cluster', 'K': K_real})
 
-            TTE_hat_n_1 = np.zeros(T)
-            TTE_hat_n_2 = np.zeros(T)
-            TTE_hat_n_3 = np.zeros(T)
-            TTE_hat_U_1 = np.zeros(T)
-            TTE_hat_U_2= np.zeros(T)
-            TTE_hat_U_3 = np.zeros(T)
             for j in range(T):
                 dict_base.update({'rep_z': j})
                 # Cluster Randomized Design
@@ -228,45 +222,6 @@ def run_experiment(model, n, nc, p, q, Pii, Pij, phi, design, EK, graphNum, T, U
                         est = estimatorsClRD[x](EK/nc,y1,z1,sums1,H[0],sums_U1,y2,z2,sums2,H[1],sums_U2,y3,z3,sums3,H[2],sums_U3)                
                     dict_base.update({'Estimator': names_ClRD[x], 'est': np.round(est,5), 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                     results.append(dict_base.copy())
-
-                    # Save polynomial interpolation TTE estimates 
-                    if (names_ClRD[x] == 'PI$(q;1)$'):
-                        TTE_hat_n_1[j] = est
-                    elif (names_ClRD[x] == 'PI-$\mathcal{U}(q;1)$'):
-                        TTE_hat_U_1[j] = est
-                    elif (names_ClRD[x] == 'PI$(q;2)$'):
-                        TTE_hat_n_2[j] = est
-                    elif (names_ClRD[x] == 'PI-$\mathcal{U}(q;2)$'):
-                        TTE_hat_U_2[j] = est
-                    elif (names_ClRD[x] == 'PI$(q;3)$'):
-                        TTE_hat_n_3[j] = est
-                    elif (names_ClRD[x] == 'PI-$\mathcal{U}(q;3)$'):
-                        TTE_hat_U_3[j] = est
-
-            # Compute conditional expectations E[TTE_hat | U]
-            conditional_E = np.sum(TTE_hat_n_1)/T
-            dict_base.update({'Estimator': 'E[PI$(q;1)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())            
-
-            conditional_E = np.sum(TTE_hat_U_1)/T
-            dict_base.update({'Estimator': 'E[PI-$\mathcal{U}(q;1)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())  
-
-            conditional_E = np.sum(TTE_hat_n_2)/T
-            dict_base.update({'Estimator': 'E[PI$(q;2)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())   
-
-            conditional_E = np.sum(TTE_hat_U_2)/T
-            dict_base.update({'Estimator': 'E[PI-$\mathcal{U}(q;2)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())  
-
-            conditional_E = np.sum(TTE_hat_n_3)/T
-            dict_base.update({'Estimator': 'E[PI$(q;3)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())   
-
-            conditional_E = np.sum(TTE_hat_U_3)/T
-            dict_base.update({'Estimator': 'E[PI-$\mathcal{U}(q;3)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())  
 
             # Bernoulli Randomized Design (No Clusters)
             dict_base.update({'design': 'Bernoulli'})
