@@ -1,0 +1,8 @@
+Runtime (in seconds) for q = 0.06 step: 37.970118284225464
+Runtime (in seconds) for q = 0.12 step: 37.71348285675049
+Runtime (in seconds) for q = 0.25 step: 38.14357805252075
+Runtime (in seconds) for q = 0.3333333333333333 step: 38.28182816505432
+Runtime (in seconds) for q = 0.6666666666666666 step: 37.74603009223938
+Runtime (in seconds) for q = 1 step: 37.8276948928833
+
+Total runtime in minutes: 3.7947157820065818
