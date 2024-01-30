@@ -100,7 +100,7 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
     estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: DM_naive(y,z))                 # difference in means 
     estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
-    alg_names_clusterRD = ['PI-$n$($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)']
+    alg_names_clusterRD = ['PI($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)']
 
     # Bernoulli Randomized Design Estimators
     estimators_bernRD = []
@@ -110,7 +110,7 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
     estimators_bernRD.append(lambda y,z,sums,H_m: DM_naive(y,z))                 # difference in means 
     estimators_bernRD.append(lambda y,z,sums,H_m: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
-    alg_names_bernRD = ['PI-$n$($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
+    alg_names_bernRD = ['PI($p$)', 'LS-Prop', 'LS-Num','DM', 'DM($0.75$)']
 
     results = []
     for g in range(graphNum):
@@ -157,8 +157,18 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
 
             dict_base.update({'rep_U': i, 'design': 'Cluster', 'K': K_real})
 
-            TTE_hat_n = np.zeros(T)
-            TTE_hat_U = np.zeros(T)
+            EZ = np.zeros(shape=(beta+1,n))
+            for b in range(1,beta+1):
+                EZ[b,selected_nodes] = P[b]
+
+            Esums = outcome_sums(n, fy, EZ, selected_nodes)[0]
+
+            bias_correction = 1 - (1-(EK/nc))**nc
+            conditional_E = PI(n*(K_real/nc)*bias_correction, Esums, H)
+
+            dict_base.update({'Estimator': 'E[PI$(q)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
+            results.append(dict_base.copy())
+
             for j in range(T):
                 dict_base.update({'rep_z': j})
                 # Cluster Randomized Design
@@ -175,30 +185,6 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
                         est = estimators_clusterRD[x](EK/nc,y,z,sums,H,sums_U)
                     dict_base.update({'Estimator': alg_names_clusterRD[x], 'est': np.round(est,5), 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                     results.append(dict_base.copy())
-                    
-                    # Save polynomial interpolation TTE estimates
-                    if (alg_names_clusterRD[x] == 'PI-$n$($q$)'):
-                        TTE_hat_n[j] = est
-                    if (alg_names_clusterRD[x] == 'PI-$\mathcal{U}$($q$)'):
-                        TTE_hat_U[j] = est
- 
-                    # Testing for edge case
-                    if isinstance(est, list):
-                        with open('error_variables.picle', 'wb') as f:
-                            pickle.dump({'A': A, 'P': P, 'H': H, 'selected': selected, 'U': selected_nodes, 'Z': Z, 'sums': sums, 'sums_U': sums_U, 'estimator': alg_names_clusterRD[x], 'estimate': est}, f)
-                        raise ValueError('The estimator {} returned an invalid value {}'.format(alg_names_clusterRD[x], est))
-
-            # Compute conditional expectations E[TTE_hat | U]
-            conditional_E = np.sum(TTE_hat_n)/T
-            dict_base.update({'Estimator': 'E[PI-$n(q)|\mathcal{U}$]', 'est': np.round(est,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())
-
-            #conditional_Var = np.sum(np.power(TTE_hat_n - T, 2))/T
-            #dict_base.update({'Estimator': 'Var[PI-$n(q)|\mathcal{U}$]', 'Bias': (conditional_Var-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-
-            conditional_E = np.sum(TTE_hat_U)/T
-            dict_base.update({'Estimator': 'E[PI-$\mathcal{U}(q)|\mathcal{U}$]', 'est': np.round(est,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
-            results.append(dict_base.copy())
 
             # Bernoulli Randomized Design (No Clusters)
             dict_base.update({'design': 'Bernoulli'})
