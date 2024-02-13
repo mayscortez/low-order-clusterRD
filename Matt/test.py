@@ -7,39 +7,49 @@ pii = 0.5    # edge probability within community
 pij = 0.02   # edge probability across communities
 
 ### other parameters
-beta = 2     # model degree
+beta = 3     # model degree
 p = 0.2      # treatment budget 
-t = 5        # number of replications in experiment
+r = 1000     # number of replications per graph
+R = 10       # number of graphs
 
-G = sbm(n,k,pii,pij)
+Bias_s = 0
+Var_s = 0
+Bias_u = 0
+Var_u = 0
 
-C = random_weights_degree_scaled(G,beta)
-Y = outcomes(G,C,beta)
-TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
-print("True TTE: ",TTE)
+for _ in range(R):
+    G = sbm(n,k,pii,pij)
 
-alpha = true_poly(G,C,beta)
-print("True Polynomial: {} p^2 + {} p + {}".format(alpha[2],alpha[1],alpha[0]))
-F = lambda p: sum([alpha[k]*p**k for k in range(beta+1)])
+    C = random_weights_degree_scaled(G,beta)
+    Y = outcomes(G,C,beta)
+    TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
+    #print("\nTrue TTE: ",TTE)
 
-P = (np.arange(10)*p/beta)[:beta+1]
- 
-Bias = 0
-Var = 0
-for _ in range(t):
-    print("------------------------")
-    Z = staggered_rollout_bern(n,P)
+    P = (np.arange(10)*p/beta)[:beta+1]
+    Z = staggered_rollout_bern(n,P,r)
+    Zu = uncorrelated_bern(n,P,r)
 
-    for k in range(beta+1):
-        print("p=",P[k],"True F(p)=",F(P[k]),"Estimated F(p)=",sum(Y(Z[k,:]))/n)
+    ########### True vs. Estimated Polynomial ###########
+    # alpha = true_poly(G,C,beta)
+    # print("True Polynomial: {} p^2 + {} p + {}".format(alpha[2],alpha[1],alpha[0]))
+    # F = lambda p: sum([alpha[k]*p**k for k in range(beta+1)])
 
-    TTE_est = pi_estimate_tte(Z,Y,P)
-    Bias += TTE_est-TTE
-    Var += (TTE_est-TTE)**2
+    # for k in range(beta+1):
+    #     print("p=",P[k],"True F(p)=",F(P[k]),"Estimated F(p)=",sum(Y(Z[k,:,0]))/n)
+    #####################################################
+
+    TTE_ests_s = pi_estimate_tte(Z,Y,P)
+    Bias_s += sum(TTE_ests_s-TTE)/r
+    Var_s += sum((TTE_ests_s-TTE)**2)/r
+
+    TTE_ests_u = pi_estimate_tte(Zu,Y,P)
+    Bias_u += sum(TTE_ests_u-TTE)/r
+    Var_u += sum((TTE_ests_u-TTE)**2)/r
 
 print("------------------------")
-print("Bias: ",Bias/t)
-print("Variance: ",Var/t)
+print("Staggered Rollout: \tBias: {} \tVar: {}".format(Bias_s/R,Var_s/R))
+print("Uncorrelated Rounds: \tBias: {} \tVar: {}".format(Bias_u/R,Var_u/R))
+
 
 
 
