@@ -7,18 +7,17 @@ import numpy as np
 import pandas as pd
 import time
 from experiment_functions import PI, horvitz_thompson, DM_naive, DM_fraction, poly_LS_prop, poly_LS_num, SBM, binary_covariate_weights, ppom, seq_treatment_probs, bern_coeffs, select_clusters_complete, select_clusters_bernoulli, staggered_rollout_bern_clusters, outcome_sums, staggered_rollout_bern
-import pickle
 
-def main(beta, graphNum, T, U, p=0.06, phi=0, p_in=0.5, cluster_selection_RD = "bernoulli"):
+def main(beta, graphNum, treatmentSamplesNum, clusterSamplesNum, p=0.06, phi=0, p_in=0.5, cluster_selection_RD = "bernoulli"):
     '''
     beta (int): degree of the model
-    graphNum (int): how many graph models to average over
-    U (int): how many cluster samples to average over
-    T (int): how many treatment samples to average over
-    p (float): treatment budget (marginal treatment probability)
+    graphNum (int): how many graph models G to average over
+    treatmentSamplesNum (int): how many treatment samples z to average over
+    clusterSamplesNum (int): how many cluster samples U to average over
+    p (float): treatment budget (marginal treatment probability), between 0 and 1
+    phi (float): probability of unit "switching" covariate type, between 0 and 1/2
     cluster_selection_RD (str): either "complete" or "bernoulli" depending on the design used for selecting clusters
     '''
-    deg_str = '_deg' + str(beta)  # naming convention
     save_path = 'output/' + 'deg' + str(beta) + '/' + cluster_selection_RD + '/' # e.g. save to the folder output/deg1/bernoulli/
     experiment = 'extrapolation'                    
     
@@ -28,8 +27,9 @@ def main(beta, graphNum, T, U, p=0.06, phi=0, p_in=0.5, cluster_selection_RD = "
     p_out = (0.5-p_in)/49     # edge probability between different communities, this way keeps expected degree constant at 10
     
     fixed = '_n' + str(n) + '_nc' + str(nc) + '_' + 'in' + str(np.round(p_in,3)).replace('.','') + '_out' + str(np.round(p_out,3)).replace('.','') + '_p' + str(p).replace('.','') + '_phi' + str(np.round(phi,3)).replace('.','') # naming convention
+    deg_str = '_deg' + str(beta)
     
-    f = open(save_path + experiment + fixed + deg_str + '_' + cluster_selection_RD + '.txt', 'w') # e.g filename could be correlation_n1000_nc50_in005_out0_p1_B01_deg2_bernoulli.txt 
+    f = open(save_path + experiment + fixed + deg_str + '_' + cluster_selection_RD + '.txt', 'w') # e.g filename could be extrapolation_n1000_nc50_in005_out0_p1_phi01_deg2_bernoulli.txt 
     startTime1 = time.time()
 
     #################################################################
@@ -52,7 +52,7 @@ def main(beta, graphNum, T, U, p=0.06, phi=0, p_in=0.5, cluster_selection_RD = "
 
         K_expected = int(p * nc / q)   # if complete design, this is actual number of chosen clusters; if Bernoulli this is expected number of chosen clusters
 
-        results.extend(run_experiment(beta, n, nc, p, q, r, diag, p_in, p_out, phi, cluster_selection_RD, K_expected, graphNum, T, U, graphStr))
+        results.extend(run_experiment(beta, n, nc, p, q, r, diag, p_in, p_out, phi, cluster_selection_RD, K_expected, graphNum, treatmentSamplesNum, clusterSamplesNum , graphStr))
 
         executionTime = (time.time() - startTime2)
         print('Runtime (in minutes) for q = {}, E[K] = {} step: {}'.format(np.round(q,3), K_expected, executionTime/60),file=f)
@@ -67,7 +67,7 @@ def main(beta, graphNum, T, U, p=0.06, phi=0, p_in=0.5, cluster_selection_RD = "
     df.to_csv(save_path + experiment + fixed + deg_str + '_' + cluster_selection_RD + '-full.csv') # e.g filename could be correlation_n1000_nc50_in005_out0_p1_B01_deg2_bernoulli-full.csv 
     
 
-def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphNum, T, U, graphStr, p_prime=0, realized = True):
+def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphNum, T, U, graphStr, p_prime=0):
     '''
     beta = degree of the model / polynomial
     n = population size
@@ -94,13 +94,14 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
 
     # Cluster Randomized Design Estimators
     estimators_clusterRD = []
-    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: PI(n*x,sums,H_m))             # estimator looks at all [n]
-    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: PI(n*x,sums_U,H_m))           # estimator only looking at [U]
-    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, EK/nc, q))  
-    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: DM_naive(y,z))                 # difference in means 
-    estimators_clusterRD.append(lambda x,y,z,sums,H_m,sums_U: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
+    estimators_clusterRD.append(lambda x_real, x_expected, y,z,sums,H_m,sums_U: PI(n*x_real,sums,H_m))             # estimator looks at all [n] - realized counts
+    estimators_clusterRD.append(lambda x_real, x_expected,y,z,sums,H_m,sums_U: PI(n*x_expected,sums,H_m))             # estimator looks at all [n] - expected counts
+    estimators_clusterRD.append(lambda x_real, x_expected,y,z,sums,H_m,sums_U: PI(n*x_real,sums_U,H_m))           # estimator only looking at [U] - realized counts
+    estimators_clusterRD.append(lambda x_real, x_expected,y,z,sums,H_m,sums_U: horvitz_thompson(n, nc, y, A, z, EK/nc, q))  
+    estimators_clusterRD.append(lambda x_real, x_expected,y,z,sums,H_m,sums_U: DM_naive(y,z))                 # difference in means 
+    estimators_clusterRD.append(lambda x_real, x_expected,y,z,sums,H_m,sums_U: DM_fraction(n,y,A,z,0.75))     # thresholded difference in means
 
-    alg_names_clusterRD = ['PI($q$)', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)']
+    alg_names_clusterRD = ['PI($q$)', 'PI($q$)-exp', 'PI-$\mathcal{U}$($q$)', 'HT', 'DM-C', 'DM-C($0.75$)']
 
     # Bernoulli Randomized Design Estimators
     estimators_bernRD = []
@@ -124,7 +125,6 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
         alpha = rand_wts[:,0].flatten()
         C = binary_covariate_weights(nc, A, phi, sigma=0.1)
         #C = simpleWeights(A, diag, offdiag, rand_wts[:,1].flatten(), rand_wts[:,2].flatten())
-        #C = covariate_weights_binary(C, minimal = 1/4, extreme = 4, phi=phi)
         
         # potential outcomes model
         fy = ppom(beta, C, alpha)
@@ -164,9 +164,13 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
             Esums = outcome_sums(n, fy, EZ, selected_nodes)[0]
 
             bias_correction = 1 - (1-(EK/nc))**nc
-            conditional_E = PI(n*(K_real/nc)*bias_correction, Esums, H)
+            conditional_E_realized = PI(n*(K_real/nc)*bias_correction, Esums, H)
 
-            dict_base.update({'Estimator': 'E[PI$(q)|\mathcal{U}$]', 'est': np.round(conditional_E,5), 'Bias': (conditional_E-TTE)/TTE, 'Abs_Bias': (conditional_E-TTE), 'Rel_bias_sq':((conditional_E-TTE)/TTE)**2, 'Bias_sq': ((conditional_E-TTE)**2)})
+            dict_base.update({'Estimator': 'E[PI$(q)|\mathcal{U}$]', 'est': np.round(conditional_E_realized,5), 'Bias': (conditional_E_realized-TTE)/TTE, 'Abs_Bias': (conditional_E_realized-TTE), 'Rel_bias_sq':((conditional_E_realized-TTE)/TTE)**2, 'Bias_sq': ((conditional_E_realized-TTE)**2)})
+            results.append(dict_base.copy())
+
+            conditional_E_expected = PI(n*(EK/nc), Esums, H)
+            dict_base.update({'Estimator': 'E[PI$(q)|\mathcal{U}$]-exp', 'est': np.round(conditional_E_expected,5), 'Bias': (conditional_E_expected-TTE)/TTE, 'Abs_Bias': (conditional_E_expected-TTE), 'Rel_bias_sq':((conditional_E_expected-TTE)/TTE)**2, 'Bias_sq': ((conditional_E_expected-TTE)**2)})
             results.append(dict_base.copy())
 
             for j in range(T):
@@ -178,11 +182,8 @@ def run_experiment(beta, n, nc, p, q, r, diag, Pii, Pij, phi, design, EK, graphN
                 sums, sums_U = outcome_sums(n, fy, Z, selected_nodes) # the sums corresponding to all nodes (i.e. [n]) and just selected nodes (i.e. [U])
 
                 for x in range(len(estimators_clusterRD)):
-                    if realized:
-                        bias_correction = 1 - (1-(EK/nc))**nc
-                        est = estimators_clusterRD[x]((K_real/nc)*bias_correction,y,z,sums,H,sums_U)
-                    else:
-                        est = estimators_clusterRD[x](EK/nc,y,z,sums,H,sums_U)
+                    bias_correction = 1 - (1-(EK/nc))**nc
+                    est = estimators_clusterRD[x]((K_real/nc)*bias_correction, EK/nc, y, z, sums, H, sums_U)
                     dict_base.update({'Estimator': alg_names_clusterRD[x], 'est': np.round(est,5), 'Bias': (est-TTE)/TTE, 'Abs_Bias': (est-TTE), 'Rel_bias_sq':((est-TTE)/TTE)**2, 'Bias_sq': ((est-TTE)**2)})
                     results.append(dict_base.copy())
 
