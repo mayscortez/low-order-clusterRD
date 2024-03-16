@@ -1,0 +1,111 @@
+From: 
+
+@inproceedings{nr,
+     title={The Network Data Repository with Interactive Graph Analytics and Visualization},
+     author={Ryan A. Rossi and Nesreen K. Ahmed},
+     booktitle={AAAI},
+     url={https://networkrepository.com},
+     year={2015}
+}
+
+Flickr-ASU:
+https://networkrepository.com/soc-Flickr-ASU.php
+
+Undirected Graph
+vertices = users                       (80,513)
+edges = social network connections     (5,899,882)
+communities = interest groups          (195)
+min degree = 2
+max degree = 5,706
+avg degree = 146
+* users can be a part of multiple interest groups
+pre-processing: add self-loops 
+
+@inproceedings{tang2009relational,
+  title={Relational learning via latent social dimensions},
+  author={Tang, Lei and Liu, Huan},
+  booktitle={Proceedings of the 15th ACM SIGKDD international conference on Knowledge discovery and data mining},
+  pages={817--826},
+  year={2009}
+}
+
+BlogCatalog-ASU:
+https://networkrepository.com/soc-BlogCatalog-ASU.php
+
+Undirected Graph
+vertices = bloggers                       (10,312)
+edges = social network connections        (333,983)
+communities = topic interests             (39)
+min degree = 1
+max degree = 3,992
+avg degree = 65
+* bloggers can belong to multiple communities
+pre-processing: add self-loops 
+
+@inproceedings{tang2009scalable,
+  title={Scalable learning of collective behavior based on sparse social dimensions},
+  author={Tang, Lei and Liu, Huan},
+  booktitle={Proceedings of the 18th ACM conference on Information and knowledge management},
+  pages={1107--1116},
+  year={2009}
+}
+
+------------------------------------------------------------------------------------------------
+
+Amazon:
+https://snap.stanford.edu/data/com-Amazon.html
+
+Undirected Graph
+vertices = products                 (334,863) -> (16,716)
+edges = co-purchases                (925,872) -> (48,739)
+communities = product category      (5,000)
+min degree = 1 -> 1
+max degree = 549 -> 51
+avg degree = 5 -> 5
+pre-processing: add self-loops, remove all products without listed category
+
+@inproceedings{yang2012defining,
+  title={Defining and evaluating network communities based on ground-truth},
+  author={Yang, Jaewon and Leskovec, Jure},
+  booktitle={Proceedings of the ACM SIGKDD Workshop on Mining Data Semantics},
+  pages={1--8},
+  year={2012}
+}
+
+Email:
+https://snap.stanford.edu/data/email-Eu-core.html
+
+Directed Graph
+vertices = researchers              (1,005)
+edges = sent emails                 (25,571)
+communities = departments           (42)
+min degree = 1
+max degree = 334
+avg degree = 25
+each user in exactly one community
+pre-processing: add self-loops 
+
+@article{leskovec2007graph,
+  title={Graph evolution: Densification and shrinking diameters},
+  author={Leskovec, Jure and Kleinberg, Jon and Faloutsos, Christos},
+  journal={ACM transactions on Knowledge Discovery from Data (TKDD)},
+  volume={1},
+  number={1},
+  pages={2--es},
+  year={2007},
+  publisher={ACM New York, NY, USA}
+}
+
+@inproceedings{yin2017local,
+  title={Local higher-order graph clustering},
+  author={Yin, Hao and Benson, Austin R and Leskovec, Jure and Gleich, David F},
+  booktitle={Proceedings of the 23rd ACM SIGKDD international conference on knowledge discovery and data mining},
+  pages={555--564},
+  year={2017}
+}
+
+
+
+
+
+
