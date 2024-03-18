@@ -22,7 +22,13 @@ for i,Ni in enumerate(G):
     A[i,Ni] = 1
 G = A
 
-print("Clustering Features")
+print("Calculating Homophily Effects")
+
+G = scipy.sparse.csr_matrix(G)
+h = homophily_effects(G)
+#h = homophily_effects(G)
+
+print("Preparing Features")
 
 feature_dict = {}
 
@@ -53,36 +59,18 @@ for _,f in feature_dict.items():
         eweights.append(w)
     xadj.append(len(adjncy))
 
-_,feature_membership = pymetis.part_graph(nparts=6,xadj=xadj,adjncy=adjncy,vweights=vweights,eweights=eweights)
-
-print("Assigning Units to Clusters")
-
-unit_membership = np.zeros(n)
-
-for i in range(n):
-    unit_membership[i] = feature_membership[random.choice(features[i])]
-
-Cl = []
-for i in range(int(np.max(feature_membership))+1):
-    Cl.append(list(np.where(unit_membership == i)[0]))
-
-print("Cluster Sizes:",[len(cl) for cl in Cl])
-
-print("Calculating Homophily Effects")
-h = homophily_effects(G)
+# parameters
+betas = [1,2]               # model degree
+ncs = [4,8,12,16,20]        # number of clusters
+p = 0.1                     # treatment budget
+qs = np.linspace(p,1,19)    # effective treatment budget
+r = 1000                    # number of replications
 
 ##############################################
 
-# parameters
-betas = [1,2]               # model degree
-p = 0.1                     # treatment budget
-qs = np.linspace(p,1,19)    # effective treatment budget
-bs = np.linspace(0,1,2)     # magnitude of homophily
-r = 10000                   # number of replications
+data = { "q": [], "nc": [], "beta": [], "tte_hat": [], "type": [] }
 
-data = { "q": [], "b": [], "beta": [], "tte_hat": [], "type": [] }
-
-def estimate_two_stage(q,beta):
+def estimate_two_stage(q,r,beta):
     Q = np.linspace(0, q, beta+1)
     Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,r)  # U is n x r
     tte_hat = pi_estimate_tte_two_stage(Z,Y,p/q,Q)
@@ -90,26 +78,41 @@ def estimate_two_stage(q,beta):
 
     return (q, tte_hat, e_tte_hat_given_u)
 
-for beta in betas:
-    for b in bs:
-        Y = pom_ugander_yin(G,b*h,beta)
-        TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
-        print("b: {}\t True TTE: {}".format(b,TTE))
+for nc in ncs:
+    print("Assigning Units to {} Clusters".format(nc))
+    _,feature_membership = pymetis.part_graph(nparts=nc,xadj=xadj,adjncy=adjncy,vweights=vweights,eweights=eweights)
 
-        for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(q,beta))(q) for q in qs):
-            data["q"] += [q]*(2*r)
-            data["b"] += [b]*(2*r)
-            data["beta"] += [beta]*(2*r)
-            data["type"] += ["real"]*r
-            data["tte_hat"] += list(TTE_hat - TTE)
-            data["type"] += ["exp"]*r
-            data["tte_hat"] += list(E_given_U - TTE)
+    unit_membership = np.zeros(n)
+
+    for i in range(n):
+        unit_membership[i] = feature_membership[random.choice(features[i])]
+
+    Cl = []
+    for i in range(int(np.max(feature_membership))+1):
+        Cl.append(list(np.where(unit_membership == i)[0]))
+
+    print("Cluster Sizes:",[len(cl) for cl in Cl])
+
+    for beta in betas:
+        Y = pom_ugander_yin(G,h,beta)
+        TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
+        print("beta: {}\t True TTE: {}".format(beta,TTE))
+        
+        for _ in range(r//1000):
+            for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(q,1000,beta))(q) for q in qs):
+                data["q"] += [q]*2000
+                data["beta"] += [beta]*2000
+                data["nc"] += [nc]*2000
+                data["type"] += ["real"]*1000
+                data["tte_hat"] += list(TTE_hat - TTE)
+                data["type"] += ["exp"]*1000
+                data["tte_hat"] += list(E_given_U - TTE)
 
 df = pd.DataFrame(data)
 
 colors = ['#0296fb', '#e20287']
 
-g = sns.FacetGrid(df, row="beta", col="b")
+g = sns.FacetGrid(df, row="beta", col="nc")
 g.map_dataframe(sns.lineplot, x="q", y="tte_hat", hue="type", estimator="mean", errorbar="sd", palette=colors)
 plt.legend()
 plt.show()

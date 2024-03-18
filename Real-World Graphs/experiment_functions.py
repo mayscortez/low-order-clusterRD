@@ -1,9 +1,24 @@
 import numpy as np
-from itertools import combinations
-from math import comb
 from scipy.special import binom
+import scipy
 
 ######## Potential Outcomes Model ########
+
+# def homophily_effects_dense(G):
+#     '''
+#     Returns vectors of (normalized) homophily effects as described in the Ugander/Yin paper
+#         G = adjacency list representation of graph
+#     '''
+#     n = G.shape[0]
+#     degrees = np.sum(G,axis=1)
+#     normalized_laplacian = -G/degrees
+#     normalized_laplacian[range(n),range(n)] = 1
+    
+#     eigvals, eigvecs = np.linalg.eig(normalized_laplacian)
+#     fiedler_index = np.where(eigvals.real == np.sort(eigvals.real)[1])[0][0]
+#     h = eigvecs[:,fiedler_index].real
+
+#     return h/(max(abs(max(h)),abs(min(h))))
 
 def homophily_effects(G):
     '''
@@ -11,13 +26,12 @@ def homophily_effects(G):
         G = adjacency list representation of graph
     '''
     n = G.shape[0]
-    degrees = np.sum(G,axis=1)
-    normalized_laplacian = -G/degrees
+    degrees = G.sum(axis=1)
+    normalized_laplacian = (-G/degrees).tocsr()
     normalized_laplacian[range(n),range(n)] = 1
-    
-    eigvals, eigvecs = np.linalg.eig(normalized_laplacian)
-    fiedler_index = np.where(eigvals.real == np.sort(eigvals.real)[1])[0][0]
-    h = eigvecs[:,fiedler_index].real
+
+    _,eigvecs_s = scipy.sparse.linalg.eigs(normalized_laplacian,k=2,which='SM')
+    h = eigvecs_s[:,1].real
 
     return h/(max(abs(max(h)),abs(min(h))))
 
@@ -30,10 +44,18 @@ def _outcomes(Z,G,C,beta,delta):
         beta = model degree
         delta = magnitide of direct
     '''
-    n = G.shape[0]
-    d = np.sum(G,axis=1)   # degrees
-    t = Z @ G.T            # number of treated neighbors 
-        
+    n = Z.shape[-1]
+
+    #d = np.sum(G,axis=1)   # degrees
+    d = np.ones(n) @ G.T #.sum(axis=1).reshape(n)
+
+    if Z.ndim == 3:
+        t = np.zeros_like(Z)
+        for b in range(Z.shape[0]):
+            t[b,:,:] = Z[b,:,:] @ G.T
+    else:
+        t = Z @ G.T            # number of treated neighbors 
+
     Y = delta * Z
     for k in range(beta+1):
         Y += (binom(t,k) / np.where(d>k,binom(d,k),1)) * C[k,:]
@@ -45,14 +67,15 @@ def pom_ugander_yin(G,h,beta):
     Returns vectors of coefficients c_i,S for each individual i and neighborhood subset S 
     Coefficients are given by a modification of Ugander/Yin's model to incorporate varied treatment effects across individuals and higher-order neighbor effects
         G = adjacency list representation of graph
-        h = vector of (scaled) homophily effects
+        h = vector of homophily effects
         beta = model degree
     '''
 
     # parameters 
     a = 1                                         # baseline effect
+    b = 0.5                                       # magnitude of homophily effects on baselines
     sigma = 0.1                                   # magnitude of random perturbation on baselines
-    delta = 1                                     # magnitude of direct effect
+    delta = 0.5                                   # magnitude of direct effect
     gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
     tau = 0.01                                    # magnitude of random perturbation on treatment effects
 
@@ -60,7 +83,7 @@ def pom_ugander_yin(G,h,beta):
     degrees = np.sum(G,axis=1)
     dbar = sum(degrees)/n
 
-    baseline = ( a + h + sigma * np.random.normal(size=n) ) * degrees/dbar
+    baseline = ( a + b * h + sigma * np.random.normal(size=n) ) * degrees/dbar
 
     C = np.empty((beta+1,n)) # C[k,i] = uniform effect coefficient c_i,S for |S| = k, excluding individual boost delta
     C[0,:] = baseline
