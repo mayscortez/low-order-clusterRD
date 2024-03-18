@@ -8,7 +8,7 @@ From:
      year={2015}
 }
 
-Flickr-ASU:
+Flickr:
 https://networkrepository.com/soc-Flickr-ASU.php
 
 Undirected Graph
@@ -29,7 +29,7 @@ pre-processing: add self-loops
   year={2009}
 }
 
-BlogCatalog-ASU:
+BlogCatalog:
 https://networkrepository.com/soc-BlogCatalog-ASU.php
 
 Undirected Graph
