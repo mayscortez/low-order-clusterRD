@@ -1,36 +1,24 @@
 import pickle
 import re
 import numpy as np
+import scipy.sparse
 
-G_dict = {} # dictionary mapping each vertex to list of neighbors
-
-users = set()
+n = 1005
+G_dict = { i:[i] for i in range(n)}  # dictionary mapping each vertex to list of neighbors
 
 for line in open("edges.txt", "r"):
     m = re.match("^([0-9]*) ([0-9]*)$",line)
     u,v = m.group(1,2)
     u,v = int(u),int(v)
 
-    users.add(u)
-    users.add(v)
+    G_dict[v].append(u) 
 
-    if v not in G_dict:
-        G_dict[v] = [u]      # we want to keep track of in-neighbors, so this is "backwards"
-    else:
-        G_dict[v].append(u)
-
-n = len(users)
-
+G = scipy.sparse.lil_array((n,n))
+    
 for i in range(n):
-    if i not in G_dict:
-        G_dict[i] = [i]
-    else:
-        G_dict[i].append(i)
-        G_dict[i] = list(set(G_dict[i])) # remove duplicates
+    G[i,G_dict[i]] = 1
 
-G = []
-for i in range(n):
-    G.append(sorted(G_dict[i]))
+G = G.tocsr()
 
 membership = np.empty(n)
 

@@ -26,7 +26,7 @@ def homophily_effects(G):
         G = adjacency list representation of graph
     '''
     n = G.shape[0]
-    degrees = G.sum(axis=1)
+    degrees = G.sum(axis=0)
     normalized_laplacian = (-G/degrees).tocsr()
     normalized_laplacian[range(n),range(n)] = 1
 
@@ -35,26 +35,23 @@ def homophily_effects(G):
 
     return h/(max(abs(max(h)),abs(min(h))))
 
-def _outcomes(Z,G,C,beta,delta):
+def _outcomes(Z,G,C,d,beta,delta):
     '''
     Returns a matrix of outcomes for the given tensor of treatment assignments
         Z = treatment assignments: (beta+1) x r x n
         G = adjacency list representation of graph
         C = Ugander Yin coefficients: (beta+1) x n
+        d = vector of vertex degrees: n 
         beta = model degree
         delta = magnitide of direct
     '''
-    n = Z.shape[-1]
-
-    #d = np.sum(G,axis=1)   # degrees
-    d = np.ones(n) @ G.T #.sum(axis=1).reshape(n)
 
     if Z.ndim == 3:
         t = np.zeros_like(Z)
         for b in range(Z.shape[0]):
-            t[b,:,:] = Z[b,:,:] @ G.T
+            t[b,:,:] = Z[b,:,:] @ G
     else:
-        t = Z @ G.T            # number of treated neighbors 
+        t = Z @ G           # number of treated neighbors 
 
     Y = delta * Z
     for k in range(beta+1):
@@ -67,6 +64,7 @@ def pom_ugander_yin(G,h,beta):
     Returns vectors of coefficients c_i,S for each individual i and neighborhood subset S 
     Coefficients are given by a modification of Ugander/Yin's model to incorporate varied treatment effects across individuals and higher-order neighbor effects
         G = adjacency list representation of graph
+        d = vector of vertex degrees
         h = vector of homophily effects
         beta = model degree
     '''
@@ -80,10 +78,10 @@ def pom_ugander_yin(G,h,beta):
     tau = 0.01                                    # magnitude of random perturbation on treatment effects
 
     n = G.shape[0]
-    degrees = np.sum(G,axis=1)
-    dbar = sum(degrees)/n
+    d = np.ones(n) @ G         # vertex degrees
+    dbar = np.sum(d)/n
 
-    baseline = ( a + b * h + sigma * np.random.normal(size=n) ) * degrees/dbar
+    baseline = ( a + b * h + sigma * np.random.normal(size=n) ) * d/dbar
 
     C = np.empty((beta+1,n)) # C[k,i] = uniform effect coefficient c_i,S for |S| = k, excluding individual boost delta
     C[0,:] = baseline
@@ -91,7 +89,7 @@ def pom_ugander_yin(G,h,beta):
     for k in range(1,beta+1):
         C[k,:] = baseline * (gamma[k] + tau * np.random.normal(size=n))
 
-    return lambda Z : _outcomes(Z,G,C,beta,delta)
+    return lambda Z : _outcomes(Z,G,C,d,beta,delta)
 
 
 ######## Treatment Assignments ########

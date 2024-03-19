@@ -10,7 +10,7 @@ from joblib import Parallel, delayed
 
 print("Loading Graph")
 
-graph_file = open("BlogCatalog/graph_data.pkl", "rb")
+graph_file = open("Flickr/graph_data.pkl", "rb")
 G,features = pickle.load(graph_file)
 n = G.shape[0]
 
@@ -20,7 +20,7 @@ h = homophily_effects(G)
 
 # parameters
 betas = [1,2]               # model degree
-ncs = [10,20,30,40]         # number of clusters
+ncs = [40,80,120,160,200]   # number of clusters
 p = 0.1                     # treatment budget
 qs = np.linspace(p,1,19)    # effective treatment budget
 r = 1000                    # number of replications
@@ -40,7 +40,7 @@ def estimate_two_stage(Y,q,r,beta):
 for nc in ncs:
     print("Assigning Units to {} Clusters".format(nc))
 
-    membership = KModes(n_clusters=nc, init="random", n_init=100, n_jobs=-1).fit_predict(features)
+    membership = KModes(n_clusters=nc, init="random", n_init=10, verbose=10, n_jobs=-1).fit_predict(features)
 
     Cl = []
     for i in range(nc):
@@ -53,14 +53,14 @@ for nc in ncs:
         TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
         print("beta: {}\t True TTE: {}".format(beta,TTE))
         
-        for _ in range(r//1000):
-            for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(Y,q,1000,beta))(q) for q in qs):
-                data["q"] += [q]*2000
-                data["beta"] += [beta]*2000
-                data["nc"] += [nc]*2000
-                data["type"] += ["real"]*1000
+        for _ in range(r//100):
+            for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(Y,q,100,beta))(q) for q in qs):
+                data["q"] += [q]*200
+                data["beta"] += [beta]*200
+                data["nc"] += [nc]*200
+                data["type"] += ["real"]*100
                 data["tte_hat"] += list(TTE_hat - TTE)
-                data["type"] += ["exp"]*1000
+                data["type"] += ["exp"]*100
                 data["tte_hat"] += list(E_given_U - TTE)
 
 df = pd.DataFrame(data)

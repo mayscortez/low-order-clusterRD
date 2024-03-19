@@ -4,7 +4,6 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
 import pickle
-import scipy
 
 from joblib import Parallel, delayed 
 
@@ -18,20 +17,13 @@ print("Loading Graph")
 
 graph_file = open("Email/graph_data.pkl", "rb")
 G,Cl,membership = pickle.load(graph_file)
-n = len(G)
 
-# convert to adjacency matrix
-A = np.zeros((n,n))
-for i,Ni in enumerate(G):
-    A[i,Ni] = 1
-G = A
-
-G = scipy.sparse.csr_matrix(G)
+n = G.shape[0]             # graph size
 h = homophily_effects(G)
 
 data = { "q": [], "beta": [], "tte_hat": [], "type": [] }
 
-def estimate_two_stage(q,beta):
+def estimate_two_stage(Y,q,beta):
     Q = np.linspace(0, q, beta+1)
     Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,r)  # U is n x r
     tte_hat = pi_estimate_tte_two_stage(Z,Y,p/q,Q)
@@ -44,7 +36,7 @@ for beta in betas:
     TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
     print("beta: {}\t True TTE: {}".format(beta,TTE))
 
-    for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(q,beta))(q) for q in qs):
+    for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(Y,q,beta))(q) for q in qs):
         data["q"] += [q]*(2*r)
         data["beta"] += [beta]*(2*r)
         data["type"] += ["real"]*r
