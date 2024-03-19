@@ -43,6 +43,36 @@ def random_weights_degree_scaled(G, beta):
 
     return C
 
+def community_based_weights(G,Cl,f,beta):
+    ''' 
+    Returns weights calculated by the function f
+        G = adjacency list representation of causal network
+        Cl = clustering of the graph into communities, list of lists whose elements partition [n]
+        f = weight function which computes c_i,S = f(Cl(i), |S|, |S intersect Cl(i)|)
+        beta = model degree
+    '''
+
+    n = len(G)    
+    cluster_of = [0]*n
+    for (j,cl) in enumerate(Cl):
+        for i in cl:
+            cluster_of[i] = j
+
+
+    C = []
+
+    for (i,Ni) in enumerate(G):
+        Ci = []
+
+        for k in range(beta+1):
+            for S in combinations(Ni,k):
+                S_same_type = [s for s in S if cluster_of[s] == cluster_of[i]]
+                Ci.append(f(cluster_of[i],k,len(S_same_type)))
+        C.append(np.array(Ci))
+
+    return C
+
+
 ######## Potential Outcomes ########
 
 def z_tilde(Z,Ni,beta):
@@ -103,6 +133,31 @@ def staggered_rollout_bern(n,P,r=1):
 
     return Z
 
+def staggered_rollout_bern_cluster(n,Cl,poq,Q,r=1):
+    '''
+        Returns treatment samples from Bernoulli staggered rollout
+        n = number of individuals
+        Cl = clusters, list of lists that partition [n]
+        poq = cluster selection probability
+        Q = treatment probabilities of selected units for each time step: beta+1
+        r = number of replications
+    '''
+    k = len(Cl)
+
+    T = np.zeros((n,k))
+    for (j,cl) in enumerate(Cl):
+        T[cl,j] = 1
+
+    selection_mask = T @ ((np.random.rand(k,r) < poq) + 0)
+
+    Z = np.zeros((len(Q),n,r))
+    U = np.random.rand(n,r)     # random values that determine when individual i starts being treated
+
+    for t in range(len(Q)):
+        Z[t,:,:] = (U < Q[t]) + 0
+
+    return Z * selection_mask
+
 def uncorrelated_bern(n,P,r=1):
     '''
         Returns treatment samples from independent multi-stage Bernoulli experiment
@@ -153,3 +208,21 @@ def pi_estimate_tte(Z,Y,P):
         TTE_hat += H[t]*np.sum(Y(Z[t,:]),axis=1)
     
     return TTE_hat/n
+
+def pi_estimate_tte_clustered(Z,Y,poq,Q):
+    '''
+    Returns TTE estimate from polynomial interpolation
+        Z = treatment assignments: (beta+1) x n x r
+        Y = potential outcomes function: {0,1}^n -> R^n
+        poq = cluster selection probability
+        Q = treatment probabilities of selected units for each time step: beta+1
+    '''
+    T,n,r = Z.shape
+
+    H = interp_coefficients(Q)
+
+    TTE_hat = np.zeros(r)
+    for t in range(T):
+        TTE_hat += H[t]*np.sum(Y(Z[t,:]),axis=1)
+    
+    return TTE_hat/(n*poq)
