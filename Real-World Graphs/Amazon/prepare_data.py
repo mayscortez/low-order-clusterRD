@@ -1,54 +1,43 @@
 import pickle
 import re
 import numpy as np
+import scipy.sparse
 
-G_dict = {} # dictionary mapping each vertex to list of neighbors
+feature_dict = {} # dictionary mapping each product to list of categories
 
-products = set()
+for category,products in enumerate(open("communities_5000.txt", "r")):
+    for product in re.split("[\t\n]",products)[:-1]:
+        product = int(product)
+        if product not in feature_dict:
+            feature_dict[product] = [category]
+        else:
+            feature_dict[product].append(category)
+
+n = len(feature_dict)
+id = { u:i for (i,u) in enumerate(feature_dict.keys())} # dictionary mapping products in these categories to a unique id
+
+features = np.zeros((n,5000))
+for i,fi in feature_dict.items():
+    features[id[i],fi] = 1
+
+G_dict = { i:[i] for i in range(n)}  # dictionary mapping each product to list of neighbors
 
 for line in open("edges.txt", "r"):
     m = re.match("^([0-9]*)\t([0-9]*)$",line)
     u,v = m.group(1,2)
     u,v = int(u),int(v)
 
-    products.add(u)
-    products.add(v)
+    if u not in feature_dict or v not in feature_dict: continue
 
-    if u not in G_dict:
-        G_dict[u] = [v]
-    else:
-        G_dict[u].append(v)
+    G_dict[id[u]].append(id[v])
+    G_dict[id[v]].append(id[u])
 
-    if v not in G_dict:
-        G_dict[v] = [u]
-    else:
-        G_dict[v].append(u)
+G = scipy.sparse.lil_array((n,n))
+    
+for i in range(n):
+    G[i,G_dict[i]] = 1
 
-features = { u:[] for u in products} # dictionary mapping each product to list of categories
-
-for j,line in enumerate(open("communities_5000.txt", "r")):
-    for u in re.split("[\t\n]",line)[:-1]:
-        features[int(u)].append(j)
-
-deleted = set()
-for u in products:
-    if len(features[u]) == 0:
-        for v in G_dict[u]:
-            G_dict[v].remove(u)
-        del G_dict[u]
-        del features[u]
-        deleted.add(u)
-
-products = products.difference(deleted)
-
-id = { u:i for (i,u) in enumerate(products)}
-G = []
-
-for u in products:
-    G_dict[u].append(u)
-    G.append(sorted([id[v] for v in G_dict[u]]))
-
-l = [len(v) for k,v in features.items()]
+G = G.tocsr()
 
 file = open("graph_data.pkl", "wb")
 pickle.dump((G,features), file)
