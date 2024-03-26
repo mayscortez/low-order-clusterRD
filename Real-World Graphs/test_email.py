@@ -23,20 +23,20 @@ h = homophily_effects(G)
 
 data = { "q": [], "beta": [], "tte_hat": [], "type": [] }
 
-def estimate_two_stage(Y,q,beta):
+def estimate_two_stage(fY,q,r,beta):
     Q = np.linspace(0, q, beta+1)
     Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,r)  # U is n x r
-    tte_hat = pi_estimate_tte_two_stage(Z,Y,p/q,Q)
-    e_tte_hat_given_u = q/(n*p)*np.sum(Y(U) - Y(np.zeros(n)),axis=1)
+    tte_hat = pi_estimate_tte_two_stage(fY(Z),p/q,Q)
+    e_tte_hat_given_u = q/(n*p)*np.sum(fY(U) - fY(np.zeros(n)),axis=1)
 
     return (q, tte_hat, e_tte_hat_given_u)
 
 for beta in betas:
-    Y = pom_ugander_yin(G,h,beta)
-    TTE = np.sum(Y(np.ones(n))-Y(np.zeros(n)))/n
+    fY = pom_ugander_yin(G,h,beta)
+    TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
     print("beta: {}\t True TTE: {}".format(beta,TTE))
 
-    for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(Y,q,beta))(q) for q in qs):
+    for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,q,beta))(q) for q in qs):
         data["q"] += [q]*(2*r)
         data["beta"] += [beta]*(2*r)
         data["type"] += ["real"]*r
