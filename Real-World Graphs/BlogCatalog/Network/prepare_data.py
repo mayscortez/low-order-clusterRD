@@ -38,6 +38,6 @@ features = np.zeros((n,nf))
 for i,fi in feature_dict.items():
     features[i,fi] = 1
 
-file = open("graph_data.pkl", "wb")
+file = open("data.pkl", "wb")
 pickle.dump((G,features), file)
 file.close()

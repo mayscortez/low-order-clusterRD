@@ -33,6 +33,6 @@ Cl = []
 for i in range(int(np.max(membership))+1):
     Cl.append(list(np.where(membership == i)[0]))
 
-file = open("graph_data.pkl", "wb")
+file = open("data.pkl", "wb")
 pickle.dump((G,Cl,membership), file)
 file.close()
