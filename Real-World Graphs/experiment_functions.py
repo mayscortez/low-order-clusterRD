@@ -140,7 +140,7 @@ def pom_market(G,h,beta):
     sigma = 0.1                                   # magnitude of random perturbation on baselines
     delta = 0.5                                   # magnitude of direct effect
     gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
-    tau = 0.01                                    # magnitude of random perturbation on treatment effects
+    tau = 0.05                                    # magnitude of random perturbation on treatment effects
 
     n = G.shape[0]
     d = np.ones(n) @ G         # vertex degrees

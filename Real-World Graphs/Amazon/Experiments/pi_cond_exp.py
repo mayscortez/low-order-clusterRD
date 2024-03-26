@@ -1,15 +1,13 @@
+import sys
+sys.path.insert(0, "../../")
+
 from experiment_functions import *
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import pickle
-
 from joblib import Parallel, delayed 
+import pickle
 
 print("Loading Graph")
 
-file = open("Amazon/data.pkl", "rb")
+file = open("../Network/data.pkl", "rb")
 G,Cls = pickle.load(file)
 n = G.shape[0]
 
@@ -20,9 +18,9 @@ h = homophily_effects(G)
 # parameters
 betas = [1,2]               # model degree
 ncs = [100,300,500]         # number of clusters
-p = 0.1                     # treatment budget
+p = 0.2                     # treatment budget
 qs = np.linspace(p,1,19)    # effective treatment budget
-r = 10000                   # number of replications
+r = 1000                    # number of replications
 
 ##############################################
 
@@ -52,10 +50,6 @@ for nc in ncs:
                 data["est"] += ["exp"]*1000
                 data["tte_hat"] += list(E_given_U - TTE)
 
-df = pd.DataFrame(data)
-
-colors = ['#0296fb', '#e20287']
-
-g = sns.FacetGrid(df, row="beta", col="nc")
-g.map_dataframe(sns.lineplot, x="q", y="tte_hat", hue="est", estimator="mean", errorbar="sd", palette=colors)
-plt.legend()
+file = open("pi_data.pkl", "wb")
+pickle.dump((data), file)
+file.close()

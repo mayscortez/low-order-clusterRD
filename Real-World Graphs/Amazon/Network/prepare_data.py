@@ -67,6 +67,6 @@ for (nc,(_,membership)) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda nc : (
         Cl.append(np.where(membership == i)[0])
     Cls[nc] = Cl
 
-file = open("data.pkl", "wb")
+file = open("network_data.pkl", "wb")
 pickle.dump((G,Cls), file)
 file.close()
