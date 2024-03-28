@@ -137,29 +137,25 @@ def pom_market(G,h,beta):
     # parameters 
     a = 1                                         # baseline effect
     b = 0.5                                       # magnitude of homophily effects on baselines
-    sigma = 0.1                                   # magnitude of random perturbation on baselines
+    sigma = 0.5                                   # magnitude of random perturbation on baselines
     delta = 0.5                                   # magnitude of direct effect
     gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
-    tau = 0.05                                    # magnitude of random perturbation on treatment effects
+    tau = 0.1                                     # magnitude of random perturbation on treatment effects
 
     n = G.shape[0]
-    d = np.ones(n) @ G         # vertex degrees
+    d = np.ones(n) @ G         # vertex (complement) degrees
     dbar = np.sum(d)/n
     
-    baseline = ( a + b * h + sigma * np.random.normal(size=n) ) * d/dbar
+    baseline = ( a + b * h + np.random.normal(scale=sigma, size=n) ) * d/dbar
 
-    S = scipy.sparse.lil_array((n,n),dtype=np.uint8)
-    G2 = G @ G
-
-    S = (G2.sign() - G).sign()
-
+    S = ((G @ G).sign() - G).astype(np.uint8)
     ds = np.ones(n) @ S        # substitute degrees
 
     C = np.empty((beta+1,n)) # C[k,i] = uniform effect coefficient c_i,S for |S| = k, excluding individual boost delta
     C[0,:] = baseline
 
     for k in range(1,beta+1):
-        C[k,:] = baseline * (gamma[k] + tau * np.random.normal(size=n))
+        C[k,:] = baseline * (gamma[k] + np.random.normal(scale=tau, size=n))
 
     return lambda Z : _outcomes_market(Z,G,S,C,d+ds,beta,delta)
 
@@ -299,6 +295,10 @@ def ht_estimate_tte(Z,Y,G,Cl,poq,Q):
         Q = treatment probabilities of selected units for each time step: beta+1
     '''
 
+    ##################
+    # TODO: Check this, not sure it's correct
+    ##################
+
     T,_,n = Z.shape
 
     ZZ = np.transpose(Z,(1,0,2))  # r x (beta+1) x n
@@ -329,12 +329,24 @@ def ht_estimate_tte(Z,Y,G,Cl,poq,Q):
 
     return np.sum(HT_data[:,1:],axis=1)/(T-1)
 
-def ls_estimate_tte_market(Z,Y,poq,Q):
-    '''
-    Returns TTE estimate from polynomial interpolation
-        Z = treatment assignments: (beta+1) x r x n
-        Y = potential outcomes function: {0,1}^n -> R^n
-        poq = cluster selection probability
-        Q = treatment probabilities of selected units for each time step: beta+1
-    '''
-    
+######## Utility Function for Computing Effect Sizes ########
+
+def e(n,S):
+    v = np.zeros(n)
+    v[S] = 1
+    return v
+
+def LPis(fY,Cl,n):
+    L = {}
+
+    for i,C1 in enumerate(Cl):
+        L[frozenset([i])] = np.sum(fY(e(n,C1)) - fY(np.zeros(n)))
+        print("L[Pi {}] = {}".format(i,L[frozenset([i])]))
+
+        for ip,C2 in enumerate(Cl):
+            if ip >= i: continue
+            L[frozenset([i,ip])] = np.sum(fY(e(n,list(C1)+list(C2))) - fY(e(n,C1)) - fY(e(n,C2)) + fY(np.zeros(n)))
+
+    return L
+
+
