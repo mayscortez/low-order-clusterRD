@@ -6,10 +6,8 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 file = open('../Experiments/fit_poly.pkl', 'rb')
-data,L = pickle.load(file)
+data,L,Lj,Ljjp,Cl = pickle.load(file)
 file.close()
-
-L = L[100]
 
 df = pd.DataFrame(data)
 
@@ -53,19 +51,32 @@ f, ax = plt.subplots()
 n = 16716
 nc = 100
 
-a1 = sum([L[frozenset([i])]**2 for i in range(nc)])/n**2/0.2
-print(a1)
+a = sum([L[frozenset([i])]**2 for i in range(nc)])/n**2
 
-a0 = -0.2*a1
-for i in range(nc):
-    for j in range(nc):
-        if j == i: continue
-        a0 += (2*L[frozenset([i])] + L[frozenset([i,j])]) * L[frozenset([i,j])]/n**2
-print(a0)
+c1 = sum([x**2 for x in Lj])
+c2 = sum([x**2 for _,x in Ljjp.items()])
+c3 = 0
+for C in Cl:
+    for j in C:
+        for jp in C:
+            if jp == j: continue
+            c3 += Lj[j] * Ljjp[frozenset([j,jp])]
+c4 = 0
+for C in Cl:
+    for j in C:
+        c4 += sum([Ljjp[frozenset([j,jp])] for jp in C if jp != j]) 
+
+print(c1)
+print(c2)
+print(c3)
+print(c4)
+
 
 x = np.linspace(0.2,1,1000)
-y = a1*x + a0
+y = a*x/0.2 - a
+y2 = (1-x)*(2-x)/(x**2*0.2*n**2) * ((2-x)*c1 + x*(2-x)*c2 + 2*x*c3 + x**2*c4) + y
 ax.plot(x,y,'k')
+ax.plot(x,y2,'r')
 
 p.on(ax).show()
 

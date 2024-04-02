@@ -4,22 +4,6 @@ import scipy
 
 ######## Potential Outcomes Model ########
 
-# def homophily_effects_dense(G):
-#     '''
-#     Returns vectors of (normalized) homophily effects as described in the Ugander/Yin paper
-#         G = adjacency list representation of graph
-#     '''
-#     n = G.shape[0]
-#     degrees = np.sum(G,axis=1)
-#     normalized_laplacian = -G/degrees
-#     normalized_laplacian[range(n),range(n)] = 1
-    
-#     eigvals, eigvecs = np.linalg.eig(normalized_laplacian)
-#     fiedler_index = np.where(eigvals.real == np.sort(eigvals.real)[1])[0][0]
-#     h = eigvecs[:,fiedler_index].real
-
-#     return h/(max(abs(max(h)),abs(min(h))))
-
 def homophily_effects(G):
     '''
     Returns vectors of (normalized) homophily effects as described in the Ugander/Yin paper
@@ -158,6 +142,65 @@ def pom_market(G,h,beta):
         C[k,:] = baseline * (gamma[k] + np.random.normal(scale=tau, size=n))
 
     return lambda Z : _outcomes_market(Z,G,S,C,d+ds,beta,delta)
+
+
+def _outcomes_market_simple(Z,G,S,baseline,gamma,delta,d,beta):
+    '''
+    Returns a matrix of outcomes for the given tensor of treatment assignments
+        Z = treatment assignments: (beta+1) x r x n
+        G = adjacency list representation of graph, indicates complements
+        S = adjacency list representation of graph of substitutes
+        C = Ugander Yin coefficients: (beta+1) x n
+        d = vector of vertex degrees: n 
+        beta = model degree
+        delta = magnitide of direct
+    '''
+    if Z.ndim == 1:
+        NC = Z @ G   # number of treated complementary products
+        NS = Z @ S   # number of treated substitute products
+    else:
+        NC = np.empty_like(Z)
+        NS = np.empty_like(Z)
+
+        for i in range(Z.shape[0]):
+            NC[i] = Z[i] @ G
+            NS[i] = Z[i] @ S
+
+    Y = 1 + delta * Z
+
+    for k in range(1,beta+1):
+        for a in range(k+1):
+            Y -= (-gamma)**k * (2*a-k) * (binom(NC,a) * binom(NS,k-a)) / np.where(d>k,binom(d,k),1) 
+
+    return Y * baseline
+
+def pom_market_simple(G,h,beta):
+    '''
+    Returns vectors of coefficients c_i,S for each individual i and neighborhood subset S 
+    Coefficients are given by a modification of Ugander/Yin's model to incorporate varied treatment effects across individuals and higher-order neighbor effects
+        G = adjacency list representation of graph
+        d = vector of vertex degrees
+        h = vector of homophily effects
+        beta = model degree
+    '''
+
+    # parameters 
+    a = 1                      # baseline effect
+    b = 0.5                    # magnitude of homophily effects on baselines
+    sigma = 0.1                # magnitude of random perturbation on baselines
+    delta = 0.5                # magnitude of direct effect
+    gamma = 1                  # magnitude of subset treatment effects
+
+    n = G.shape[0]
+    d = np.ones(n) @ G         # vertex (complement) degrees
+    dbar = np.sum(d)/n
+    
+    baseline = ( a + b * h + np.random.normal(scale=sigma, size=n) ) * d/dbar
+
+    S = ((G @ G).sign() - G).astype(np.uint8)
+    dp = np.ones(n) @ (S+G)        # degree of 2-neighborhood
+
+    return lambda Z : _outcomes_market_simple(Z,G,S,baseline,gamma,delta,dp,beta)
 
 
 ######## Treatment Assignments ########
@@ -348,5 +391,3 @@ def LPis(fY,Cl,n):
             L[frozenset([i,ip])] = np.sum(fY(e(n,list(C1)+list(C2))) - fY(e(n,C1)) - fY(e(n,C2)) + fY(np.zeros(n)))
 
     return L
-
-

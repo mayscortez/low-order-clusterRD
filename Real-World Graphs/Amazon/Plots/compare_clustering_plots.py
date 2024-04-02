@@ -12,12 +12,12 @@ colors = ['#0296fb', '#e20287']
 
 p = (
     so.Plot(df, x='q', y='tte_hat', color='est')
-    .facet(row='b', col='clustering')
+    .facet(col='clustering')
     .scale(color=colors)
     .add(so.Line(), so.Agg())                 # line plot of expected bias
     .add(so.Band(), so.Est(errorbar='sd'))    # shading for standard deviation
-    .layout(size=(10,8))
+    .layout(size=(10,4))
 )
 
 p.show()
-p.save("bias_var.png")
+p.save("compare_clusters.png")

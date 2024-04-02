@@ -17,46 +17,12 @@ print("Calculating Homophily Effects")
 h = homophily_effects(G)
 
 # parameters
-bs = [0.5,2]                # model degree
-nc = 500                    # number of clusters
+ncs = [100,300,500]         # number of clusters
 p = 0.1                     # treatment budget
-qs = np.linspace(p,1,19)    # effective treatment budget
+qs = np.linspace(p,1,16)    # effective treatment budget
 r = 1000                    # number of replications
-gamma = 0.25                # DM threshold
 
-print("Preparing Clusterings")
-
-clusterings = {}
-
-# cluster calculating using only feature data
-clusterings["feature"] = Cls[nc]
-
-# cluster calculated using graph data
-A = [[] for _ in range(n)]
-for i,j in zip(*G.nonzero()):
-    A[i].append(j)
-
-_,membership = pymetis.part_graph(nparts=nc,adjacency=A)
-membership = np.array(membership)
-Cl_graph = []
-for i in range(nc):
-    Cl_graph.append(np.where(membership == i)[0])
-
-clusterings["graph"] = Cl_graph
-
-# randomly chosen balanced clustering
-membership = np.array(list(range(nc))*(n//nc+1))[:n]
-np.random.shuffle(membership)
-
-Cl_random = []
-for i in range(nc):
-    Cl_random.append(np.where(membership == i)[0])
-
-clusterings["random"] = Cl_random
-
-##############################################
-
-data = { "q": [], "clustering": [], "b": [], "tte_hat": [], "est": [] }
+data = { "q": [], "clustering": [], "tte_hat": [], "est": [], "nc": [] }
 
 def estimate_two_stage(fY,Cl,q,r,beta):
     Q = np.linspace(0, q, beta+1)
@@ -66,18 +32,48 @@ def estimate_two_stage(fY,Cl,q,r,beta):
 
     return (q, tte_hat, e_tte_hat_given_u)
 
-for b in bs:
-    fY = pom_market(G,b*h,2)
-    TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
-    
+fY = pom_market_simple(G,h,2)
+TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
+
+for nc in ncs:
+    print("Preparing Clusterings with {} Clusters".format(nc))
+
+    clusterings = {}
+
+    # cluster calculating using only feature data
+    clusterings["feature"] = Cls[nc]
+
+    # cluster calculated using graph data
+    A = [[] for _ in range(n)]
+    for i,j in zip(*G.nonzero()):
+        A[i].append(j)
+
+    _,membership = pymetis.part_graph(nparts=nc,adjacency=A)
+    membership = np.array(membership)
+    Cl_graph = []
+    for i in range(nc):
+        Cl_graph.append(np.where(membership == i)[0])
+
+    clusterings["graph"] = Cl_graph
+
+    # randomly chosen balanced clustering
+    membership = np.array(list(range(nc))*(n//nc+1))[:n]
+    np.random.shuffle(membership)
+
+    Cl_random = []
+    for i in range(nc):
+        Cl_random.append(np.where(membership == i)[0])
+
+    clusterings["random"] = Cl_random
+
     for label,Cl in clusterings.items():
-        print("b: {}\t Clustering: {}\t True TTE: {}".format(b,label,TTE))
+        print("nc: {}\t Clustering: {}\t True TTE: {}".format(nc, label,TTE))
 
         for _ in range(r//1000):
             for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cl,q,1000,2))(q) for q in qs):
                 data["q"] += [q]*2000
-                data["b"] += [b]*2000
                 data["clustering"] += [label]*2000
+                data["nc"] += [nc]*2000
                 data["est"] += ["real"]*1000
                 data["tte_hat"] += list(TTE_hat - TTE)
                 data["est"] += ["exp"]*1000

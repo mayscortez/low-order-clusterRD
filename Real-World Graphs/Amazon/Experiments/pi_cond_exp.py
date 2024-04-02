@@ -19,7 +19,7 @@ h = homophily_effects(G)
 betas = [1,2]               # model degree
 ncs = [100,300,500]         # number of clusters
 p = 0.2                     # treatment budget
-qs = np.linspace(p,1,19)    # effective treatment budget
+qs = np.linspace(p,1,16)    # effective treatment budget
 r = 1000                    # number of replications
 
 ##############################################
@@ -36,7 +36,7 @@ def estimate_two_stage(fY,Cl,q,r,beta):
 
 for nc in ncs:
     for beta in betas:
-        fY = pom_market(G,h,beta)
+        fY = pom_market_simple(G,h,beta)
         TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
         print("nc: {}\t beta: {}\t True TTE: {}".format(nc,beta,TTE))
         
