@@ -75,76 +75,7 @@ def pom_ugander_yin(G,h,beta):
 
     return lambda Z : _outcomes(Z,G,C,d,beta,delta)
 
-
-def _outcomes_market(Z,G,S,C,d,beta,delta):
-    '''
-    Returns a matrix of outcomes for the given tensor of treatment assignments
-        Z = treatment assignments: (beta+1) x r x n
-        G = adjacency list representation of graph, indicates complements
-        S = adjacency list representation of graph of substitutes
-        C = Ugander Yin coefficients: (beta+1) x n
-        d = vector of vertex degrees: n 
-        beta = model degree
-        delta = magnitide of direct
-    '''
-    #n = Z.shape[0]
-
-    if Z.ndim == 1:
-        NC = Z @ G   # number of treated complementary products
-        NS = Z @ S   # number of treated substitute products
-    else:
-        NC = np.empty_like(Z)
-        NS = np.empty_like(Z)
-
-        for i in range(Z.shape[0]):
-            NC[i] = Z[i] @ G
-            NS[i] = Z[i] @ S
-
-    Y = delta * Z
-
-    for k in range(beta+1):
-        for a in range(k+1):
-            Y += (binom(NC,a) * binom(NS,k-a)) / np.where(d>k,binom(d,k),1) * (2*a-k) * C[k,:]
-
-    return Y
-
-def pom_market(G,h,beta):
-    '''
-    Returns vectors of coefficients c_i,S for each individual i and neighborhood subset S 
-    Coefficients are given by a modification of Ugander/Yin's model to incorporate varied treatment effects across individuals and higher-order neighbor effects
-        G = adjacency list representation of graph
-        d = vector of vertex degrees
-        h = vector of homophily effects
-        beta = model degree
-    '''
-
-    # parameters 
-    a = 1                                         # baseline effect
-    b = 0.5                                       # magnitude of homophily effects on baselines
-    sigma = 0.5                                   # magnitude of random perturbation on baselines
-    delta = 0.5                                   # magnitude of direct effect
-    gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
-    tau = 0.1                                     # magnitude of random perturbation on treatment effects
-
-    n = G.shape[0]
-    d = np.ones(n) @ G         # vertex (complement) degrees
-    dbar = np.sum(d)/n
-    
-    baseline = ( a + b * h + np.random.normal(scale=sigma, size=n) ) * d/dbar
-
-    S = ((G @ G).sign() - G).astype(np.uint8)
-    ds = np.ones(n) @ S        # substitute degrees
-
-    C = np.empty((beta+1,n)) # C[k,i] = uniform effect coefficient c_i,S for |S| = k, excluding individual boost delta
-    C[0,:] = baseline
-
-    for k in range(1,beta+1):
-        C[k,:] = baseline * (gamma[k] + np.random.normal(scale=tau, size=n))
-
-    return lambda Z : _outcomes_market(Z,G,S,C,d+ds,beta,delta)
-
-
-def _outcomes_market_simple(Z,G,S,baseline,gamma,delta,d,beta):
+def _outcomes_market(Z,G,S,baseline,gamma,delta,d,beta):
     '''
     Returns a matrix of outcomes for the given tensor of treatment assignments
         Z = treatment assignments: (beta+1) x r x n
@@ -174,7 +105,7 @@ def _outcomes_market_simple(Z,G,S,baseline,gamma,delta,d,beta):
 
     return Y * baseline
 
-def pom_market_simple(G,h,beta):
+def pom_market(G,h,beta):
     '''
     Returns vectors of coefficients c_i,S for each individual i and neighborhood subset S 
     Coefficients are given by a modification of Ugander/Yin's model to incorporate varied treatment effects across individuals and higher-order neighbor effects
@@ -200,7 +131,7 @@ def pom_market_simple(G,h,beta):
     S = ((G @ G).sign() - G).astype(np.uint8)
     dp = np.ones(n) @ (S+G)        # degree of 2-neighborhood
 
-    return lambda Z : _outcomes_market_simple(Z,G,S,baseline,gamma,delta,dp,beta)
+    return lambda Z : _outcomes_market(Z,G,S,baseline,gamma,delta,dp,beta)
 
 
 ######## Treatment Assignments ########
