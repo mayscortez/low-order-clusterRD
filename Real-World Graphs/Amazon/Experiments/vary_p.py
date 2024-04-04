@@ -16,17 +16,13 @@ print("Calculating Homophily Effects")
 h = homophily_effects(G)
 
 # parameters
-betas = [1,2]               # model degree
-ncs = [100,300,500]         # number of clusters
-p = 0.2                     # treatment budget
-qs = np.linspace(p,1,16)    # effective treatment budget
-r = 1000                    # number of replications
+ncs = [100,300,500]            # number of clusters
+ps = [0.1,0.15,0.2,0.25,0.3]   # treatment budget
+r = 1000                       # number of replications
 
-##############################################
+data = { "q": [], "p": [], "tte_hat": [], "est": [], "nc": [] }
 
-data = { "q": [], "nc": [], "beta": [], "tte_hat": [], "est": [] }
-
-def estimate_two_stage(fY,Cl,q,r,beta):
+def estimate_two_stage(fY,Cl,p,q,r,beta):
     Q = np.linspace(0, q, beta+1)
     Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,r)  # U is n x r
     tte_hat = pi_estimate_tte_two_stage(fY(Z),p/q,Q)
@@ -34,22 +30,26 @@ def estimate_two_stage(fY,Cl,q,r,beta):
 
     return (q, tte_hat, e_tte_hat_given_u)
 
+fY = pom_ugander_yin(G,h,2)
+TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
+print("True TTE: {}".format(TTE))
+
 for nc in ncs:
-    for beta in betas:
-        fY = pom_market(G,h,beta)
-        TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
-        print("nc: {}\t beta: {}\t True TTE: {}".format(nc,beta,TTE))
-        
+    Cl = Cls[nc]
+
+    for p in ps:
+        print("nc: {}\t p: {}\t".format(nc,p))
+
         for _ in range(r//1000):
-            for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cls[nc],q,1000,beta))(q) for q in qs):
+            for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cl,p,q,1000,2))(q) for q in np.linspace(p,1,16)):
                 data["q"] += [q]*2000
-                data["beta"] += [beta]*2000
+                data["p"] += [p]*2000
                 data["nc"] += [nc]*2000
                 data["est"] += ["real"]*1000
                 data["tte_hat"] += list(TTE_hat - TTE)
                 data["est"] += ["exp"]*1000
                 data["tte_hat"] += list(E_given_U - TTE)
 
-file = open("pi_data.pkl", "wb")
+file = open("vary_p.pkl", "wb")
 pickle.dump((data), file)
 file.close()

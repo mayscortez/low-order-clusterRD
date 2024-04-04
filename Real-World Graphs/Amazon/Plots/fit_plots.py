@@ -5,7 +5,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-file = open('../Experiments/fit_poly.pkl', 'rb')
+file = open('../Experiments/fit_poly2.pkl', 'rb')
 data,L,Lj,Ljjp,Cl = pickle.load(file)
 file.close()
 
@@ -33,14 +33,15 @@ df = (
 )
 
 df['Extrapolation Variance'] = (df['Extrapolation Variance'] - df['Sampling Variance']) #* df['q']**2
-
+df = df.drop(['Sampling Variance'], axis=1)
 df = df.melt(                                                       # rows for each stat to allow for stack plot 
     id_vars=['q'], 
-    value_vars=['Bias$^2$','Sampling Variance','Extrapolation Variance'],
+    #value_vars=['Bias$^2$','Sampling Variance','Extrapolation Variance'],
+    value_vars=['Bias$^2$','Extrapolation Variance'],
     var_name='stat', 
     value_name='value')
 
-p = (
+plot = (
     so.Plot(df, x='q', y='value', color='stat')
     .add(so.Area(), so.Stack())
     .layout(size=(6,4))
@@ -50,35 +51,51 @@ f, ax = plt.subplots()
 
 n = 16716
 nc = 100
+p = 0.2
 
 a = sum([L[frozenset([i])]**2 for i in range(nc)])/n**2
 
-c1 = sum([x**2 for x in Lj])
-c2 = sum([x**2 for _,x in Ljjp.items()])
-c3 = 0
+b1 = sum([x**2 for x in Lj])
+print("b1",b1)
+b2 = sum([x**2 for _,x in Ljjp.items()])
+print("b2",b2)
+b3 = 0
 for C in Cl:
     for j in C:
         for jp in C:
             if jp == j: continue
-            c3 += Lj[j] * Ljjp[frozenset([j,jp])]
-c4 = 0
+            b3 += Lj[j] * Ljjp[frozenset([j,jp])]
+print("b3",b3)
+
+b4 = 0
 for C in Cl:
     for j in C:
-        c4 += sum([Ljjp[frozenset([j,jp])] for jp in C if jp != j]) 
+        b4 += sum([Ljjp[frozenset([j,jp])] for jp in C if jp != j])**2
+print("b4",b4)
 
-print(c1)
-print(c2)
-print(c3)
-print(c4)
-
+c1 = 4*b1
+print("d1",c1)
+c2 = -8*b1+4*b2+4*b3
+print("d2",c2)
+c3 = 5*b1-8*b2-6*b3+2*b4
+print("d3",c3)
+c4 = -1*b1+5*b2+2*b3-3*b4
+print("d4",c4)
+c5 = b4-b2
+print("d5",c5)
 
 x = np.linspace(0.2,1,1000)
-y = a*x/0.2 - a
-y2 = (1-x)*(2-x)/(x**2*0.2*n**2) * ((2-x)*c1 + x*(2-x)*c2 + 2*x*c3 + x**2*c4) + y
-ax.plot(x,y,'k')
-ax.plot(x,y2,'r')
-
-p.on(ax).show()
+#y = a*x/0.2 - a
+y1 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3 + x * c4 + x**2 * c5) #+ y
+y2 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3 + x * c4) #+ y
+y3 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3) #+ y
+y4 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2) #+ y
+#ax.plot(x,y,'k')
+ax.plot(x,y1,'r')
+ax.plot(x,y2,'b')
+ax.plot(x,y3,'g')
+ax.plot(x,y4,'k')
+plot.on(ax).show()
 
 # p = (
 #     so.Plot(df, x='q', y='Extrapolation Variance')#, color='stat')

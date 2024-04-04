@@ -32,7 +32,7 @@ def estimate_two_stage(fY,Cl,q,r,beta):
 
     return (q, tte_hat, e_tte_hat_given_u)
 
-fY = pom_market_simple(G,h,2)
+fY = pom_market(G,h,2)
 TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
 
 for nc in ncs:

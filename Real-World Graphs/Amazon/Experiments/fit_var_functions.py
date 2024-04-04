@@ -25,7 +25,7 @@ r = 10000                   # number of replications
 Cl = Cls[nc]
 
 print("Calculating Potential Outcomes")
-fY = pom_market(G,h,beta)
+fY = pom_ugander_yin(G,h,beta)
 
 ##############################################
 
@@ -65,6 +65,6 @@ for _ in range(r//1000):
         data["est"] += ["exp"]*1000
         data["tte_hat"] += list(E_given_U - TTE)
 
-file = open("fit_poly.pkl", "wb")
+file = open("fit_poly2.pkl", "wb")
 pickle.dump((data,L,Lj,Ljjp,Cl), file)
 file.close()
