@@ -238,70 +238,70 @@ def dm_threshold_estimate_tte(Z,Y,G,gamma):
     DM_data -= np.sum(Y*sufficiently_control,axis=2)/np.maximum(num_sufficiently_control,1)  
     return np.sum(DM_data[1:,:],axis=0)/(T-1)
 
-def _neighborhood_cluster_sizes(G,Cl):
+def _neighborhood_cluster_sizes(N,Cl):
     '''
     Returns a list which, for each i, has an array of its number of neighbors from each cluster
-        G = causal network 
+        N = neighborhoods, list of adjacency lists
         Cl = clusters, list of lists that partition [n]
     '''
-    n = G.shape[0]
+    n = len(N)
 
     membership = np.zeros(n,dtype=np.uint8)
     for i,C in enumerate(Cl):
-        for j in C:
-            membership[j] = i
+        membership[C] = i
 
     neighborhood_cluster_sizes = np.zeros((n,len(Cl)))
     for i in range(n):
-        for j in G[[i],:].nonzero()[0]:
+        for j in N[i]:
             neighborhood_cluster_sizes[i,membership[j]] += 1
-                               
+    
     return neighborhood_cluster_sizes
 
-def ht_estimate_tte(Z,Y,G,Cl,poq,Q):
+def ht_estimate_tte(Z,Y,G,Cl,p,Q):
     '''
     Returns TTE Horvitz-Thompson estimate
-        Z = treatment assignments: (beta+1) x r x n
+        Z = treatment assignments: beta x r x n
         Y = potential outcomes function: {0,1}^n -> R^n
         G = causal network (this estimator is not graph agnostic)
         Cl = clusters, list of lists that partition [n]
-        poq = cluster selection probability
+        p = treatment budget
         Q = treatment probabilities of selected units for each time step: beta+1
     '''
-
-    ##################
-    # TODO: Check this, not sure it's correct
-    ##################
-
     T,_,n = Z.shape
 
-    ZZ = np.transpose(Z,(1,0,2))  # r x (beta+1) x n
-    YY = np.transpose(Y,(1,0,2))  # r x (beta+1) x n
+    ZZ = np.transpose(Z,(1,0,2))  # r x T x n
+    YY = np.transpose(Y,(1,0,2))  # r x T x n
 
-    ncs = _neighborhood_cluster_sizes(G,Cl)
+    N = []
+    for i in range(n):
+        N.append(G[[i],:].nonzero()[1])
+
+    ncs = _neighborhood_cluster_sizes(N,Cl)
     d = ncs.sum(axis=1)               # degree
+    for i in range(n):
+        assert(d[i] == len(N[i]))
     cd = np.count_nonzero(ncs,axis=1) # cluster degree
 
     Ni_fully_treated = np.empty_like(ZZ)
     for i in range(n):
-        Ni_fully_treated[:,:,i] = np.prod(ZZ[:,:,G[[i],:].nonzero()[0]])
+        Ni_fully_treated[:,:,i] = np.prod(ZZ[:,:,N[i]],axis=2)
 
     Ni_fully_control = np.empty_like(ZZ)
     for i in range(n):
-        Ni_fully_control[:,:,i] = np.prod(1-ZZ[:,:,G[[i],:].nonzero()[0]])
+        Ni_fully_control[:,:,i] = np.prod(1-ZZ[:,:,N[i]],axis=2)
 
     prob_fully_treated = np.empty((T,n))
     for t in range(T):
-        prob_fully_treated[t,:] = np.power(poq,cd) * np.power(Q[t],d)
+        prob_fully_treated[t,:] = np.power(p/Q[t],cd) * np.power(Q[t],d)
 
-    prob_fully_control = np.ones((T,n))
+    prob_fully_control = np.empty((T,n))
     for t in range(T):
-        prob_fully_control[t,:] = np.prod(np.where(ncs > 0,(1-poq) + np.power(1-Q[t],ncs),1),axis=1)
+        prob_fully_control[t,:] = np.prod(1 - p/Q[t]*(1-np.power(1-Q[t],ncs)),axis=1)
 
-    HT_data = np.sum(YY * Ni_fully_treated/np.where(prob_fully_treated>0,prob_fully_treated,1), axis=2)  # r x (beta+1)
+    HT_data = np.sum(YY * Ni_fully_treated/prob_fully_treated, axis=2)  # r x T
     HT_data -= np.sum(YY * Ni_fully_control/prob_fully_control, axis=2)   
 
-    return np.sum(HT_data[:,1:],axis=1)/(T-1)
+    return np.sum(HT_data,axis=1)/T
 
 ######## Utility Function for Computing Effect Sizes ########
 
@@ -315,7 +315,6 @@ def LPis(fY,Cl,n):
 
     for i,C1 in enumerate(Cl):
         L[frozenset([i])] = np.sum(fY(e(n,C1)) - fY(np.zeros(n)))
-        print("L[Pi {}] = {}".format(i,L[frozenset([i])]))
 
         for ip,C2 in enumerate(Cl):
             if ip >= i: continue

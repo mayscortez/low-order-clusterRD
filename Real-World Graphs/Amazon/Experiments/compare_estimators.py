@@ -19,7 +19,7 @@ h = homophily_effects(G)
 betas = [1,2]               # model degree
 ncs = [100,300,500]         # number of clusters
 p = 0.1                     # treatment budget
-qs = np.linspace(p,1,19)    # effective treatment budget
+qs = np.linspace(p,1,16)    # effective treatment budget
 r = 1000                    # number of replications
 gamma = 0.25                # DM threshold
 
@@ -34,8 +34,8 @@ def estimate_two_stage(fY,Cl,q,r,beta):
     tte_hat_pi = pi_estimate_tte_two_stage(Y,p/q,Q)
     tte_hat_dm = dm_estimate_tte(Z,Y)
     tte_hat_dmt = dm_threshold_estimate_tte(Z,Y,G,gamma)
-    tte_hat_ht = ht_estimate_tte(Z,Y,G,Cl,p/q,Q)
-
+    tte_hat_ht = ht_estimate_tte(Z[1:,:,:],Y[1:,:,:],G,Cl,p,Q[1:])
+    
     return (q, tte_hat_pi, tte_hat_dm, tte_hat_dmt, tte_hat_ht)
 
 for nc in ncs:
