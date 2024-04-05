@@ -5,7 +5,7 @@ import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 
-file = open('../Experiments/fit_poly2.pkl', 'rb')
+file = open('../Experiments/fit_poly3.pkl', 'rb')
 data,L,Lj,Ljjp,Cl = pickle.load(file)
 file.close()
 
@@ -59,41 +59,41 @@ b1 = sum([x**2 for x in Lj])
 print("b1",b1)
 b2 = sum([x**2 for _,x in Ljjp.items()])
 print("b2",b2)
+
 b3 = 0
 for C in Cl:
     for j in C:
         for jp in C:
-            if jp == j: continue
-            b3 += Lj[j] * Ljjp[frozenset([j,jp])]
+            if jp != j and frozenset([j,jp]) in Ljjp: 
+                b3 += Lj[j] * Ljjp[frozenset([j,jp])]
 print("b3",b3)
 
 b4 = 0
 for C in Cl:
     for j in C:
-        b4 += sum([Ljjp[frozenset([j,jp])] for jp in C if jp != j])**2
+        b4 += sum([Ljjp[frozenset([j,jp])] for jp in C if jp != j and frozenset([j,jp]) in Ljjp])**2
 print("b4",b4)
 
 c1 = 4*b1
-print("d1",c1)
+print("c1",c1)
 c2 = -8*b1+4*b2+4*b3
-print("d2",c2)
+print("c2",c2)
 c3 = 5*b1-8*b2-6*b3+2*b4
-print("d3",c3)
+print("c3",c3)
 c4 = -1*b1+5*b2+2*b3-3*b4
-print("d4",c4)
+print("c4",c4)
 c5 = b4-b2
-print("d5",c5)
+print("c5",c5)
 
 x = np.linspace(0.2,1,1000)
 #y = a*x/0.2 - a
 y1 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3 + x * c4 + x**2 * c5) #+ y
-y2 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3 + x * c4) #+ y
-y3 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3) #+ y
+#y2 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3 + x * c4) #+ y
+#y3 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2 + c3) #+ y
 y4 = 1/(p*n**2) * (1/x**2 * c1 + 1/x * c2) #+ y
+
 #ax.plot(x,y,'k')
 ax.plot(x,y1,'r')
-ax.plot(x,y2,'b')
-ax.plot(x,y3,'g')
 ax.plot(x,y4,'k')
 plot.on(ax).show()
 

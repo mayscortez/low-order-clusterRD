@@ -4,6 +4,7 @@ sys.path.insert(0, "../../")
 from experiment_functions import *
 from joblib import Parallel, delayed 
 import pickle
+from itertools import combinations
 
 print("Loading Graph")
 
@@ -23,6 +24,9 @@ qs = np.linspace(p,1,16)    # effective treatment budget
 r = 10000                   # number of replications
 
 Cl = Cls[nc]
+membership = np.zeros(n)
+for i,C in enumerate(Cl):
+    membership[C] = i
 
 print("Calculating Potential Outcomes")
 fY = pom_ugander_yin(G,h,beta)
@@ -31,17 +35,16 @@ fY = pom_ugander_yin(G,h,beta)
 
 data = { "q": [], "nc": [], "tte_hat": [], "est": [] }
 
-print("Calculating Ls")
-
+print("Calculating Cluster-Level Effects")
 L = LPis(fY,Cl,n)
+print("Calculating Individual Effects")
 Lj = [np.sum(fY(e(n,[j])) - fY(np.zeros(n))) for j in range(n)]
+
+print("Calculating Pair Effects")
 Ljjp = {}
-for i in range(100):
-    C = Cl[i]
-    print("Calculating effects for Cluster {}".format(i))
-    for j in C:
-        for jp in C:
-            if jp == j: continue
+for i in range(n):
+    for (j,jp) in combinations(G[[i],:].nonzero()[1],2):
+        if membership[j] == membership[jp] and frozenset([j,jp]) not in Ljjp:
             Ljjp[frozenset([j,jp])] = np.sum(fY(e(n,[j,jp])) - fY(np.zeros(n))) - Lj[j] - Lj[jp]
 
 def estimate_two_stage(fY,Cl,q,r,beta):
@@ -65,6 +68,6 @@ for _ in range(r//1000):
         data["est"] += ["exp"]*1000
         data["tte_hat"] += list(E_given_U - TTE)
 
-file = open("fit_poly2.pkl", "wb")
+file = open("fit_poly3.pkl", "wb")
 pickle.dump((data,L,Lj,Ljjp,Cl), file)
 file.close()
