@@ -2,6 +2,27 @@ import numpy as np
 from scipy.special import binom
 import scipy
 
+######## Constructed Networks ########
+
+def sbm(n,k,pii,pij):
+    ''' 
+    Returns a graph sampled from a stochastic block model
+        n = number of vertices
+        k = number of communities
+        pii = edge probability within community
+        pij = edge probability across communities
+    '''
+
+    c = n//k  # community size
+
+    A = (np.random.rand(n,n) < pij) + 0
+    for i in range(k):
+        A[i*c:(i+1)*c,i*c:(i+1)*c] = (np.random.rand(c,c) < pii) + 0
+
+    A[range(n),range(n)] = 1   # everyone is affected by their own treatment
+
+    return scipy.sparse.csr_matrix(A)
+
 ######## Potential Outcomes Model ########
 
 def homophily_effects(G):
