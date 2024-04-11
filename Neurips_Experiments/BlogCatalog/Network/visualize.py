@@ -5,7 +5,7 @@ import pickle
 
 print("Loading Graph")
 
-file = open("network_data.pkl", "rb")
+file = open("data.pkl", "rb")
 G,Cls = pickle.load(file)
 n = G.shape[0]
 
