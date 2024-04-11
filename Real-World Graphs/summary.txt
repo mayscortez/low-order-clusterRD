@@ -53,23 +53,26 @@ pre-processing: add self-loops
 ------------------------------------------------------------------------------------------------
 
 Amazon:
-https://snap.stanford.edu/data/com-Amazon.html
+https://snap.stanford.edu/data/amazon-meta.html
 
-Undirected Graph
-vertices = products                 (334,863) -> (16,716)
-edges = co-purchases                (925,872) -> (48,739)
-communities = product category      (5,000)
-min degree = 1 -> 1
-max degree = 549 -> 51
-avg degree = 5 -> 5
-pre-processing: add self-loops, remove all products without listed category
+Directed Graph
+vertices = products (DVDs)          (19,828) -> (14,436)
+edges = co-purchases                (70,832)
+communities = product category      (?)
+min degree = 1
+max degree = 247
+avg degree = 5
+pre-processing: restrict data to DVDs, restrict to the largest connected component, add self-loops,
 
-@inproceedings{yang2012defining,
-  title={Defining and evaluating network communities based on ground-truth},
-  author={Yang, Jaewon and Leskovec, Jure},
-  booktitle={Proceedings of the ACM SIGKDD Workshop on Mining Data Semantics},
-  pages={1--8},
-  year={2012}
+@article{leskovec2007dynamics,
+  title={The dynamics of viral marketing},
+  author={Leskovec, Jure and Adamic, Lada A and Huberman, Bernardo A},
+  journal={ACM Transactions on the Web (TWEB)},
+  volume={1},
+  number={1},
+  pages={5--es},
+  year={2007},
+  publisher={ACM New York, NY, USA}
 }
 
 Email:

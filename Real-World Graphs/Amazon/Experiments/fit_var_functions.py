@@ -68,6 +68,6 @@ for _ in range(r//1000):
         data["est"] += ["exp"]*1000
         data["tte_hat"] += list(E_given_U - TTE)
 
-file = open("fit_poly3.pkl", "wb")
+file = open("fit_poly.pkl", "wb")
 pickle.dump((data,L,Lj,Ljjp,Cl), file)
 file.close()

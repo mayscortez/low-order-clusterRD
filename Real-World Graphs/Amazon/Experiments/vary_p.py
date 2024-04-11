@@ -16,8 +16,8 @@ print("Calculating Homophily Effects")
 h = homophily_effects(G)
 
 # parameters
-ncs = [100,300,500]            # number of clusters
-ps = [0.1,0.15,0.2,0.25,0.3]   # treatment budget
+ncs = [50,200,500]             # number of clusters
+ps = [0.1,0.2,0.3]             # treatment budget
 r = 1000                       # number of replications
 
 data = { "q": [], "p": [], "tte_hat": [], "est": [], "nc": [] }

@@ -34,9 +34,9 @@ def estimate_two_stage(fY,Cl,q,r,beta):
     tte_hat_pi = pi_estimate_tte_two_stage(Y,p/q,Q)
     tte_hat_dm = dm_estimate_tte(Z,Y)
     tte_hat_dmt = dm_threshold_estimate_tte(Z,Y,G,gamma)
-    tte_hat_ht = ht_estimate_tte(Z[1:,:,:],Y[1:,:,:],G,Cl,p,Q[1:])
+    #tte_hat_ht = ht_estimate_tte(Z[1:,:,:],Y[1:,:,:],G,Cl,p,Q[1:])
     
-    return (q, tte_hat_pi, tte_hat_dm, tte_hat_dmt, tte_hat_ht)
+    return (q, tte_hat_pi, tte_hat_dm, tte_hat_dmt)#, tte_hat_ht)
 
 for nc in ncs:
     for beta in betas:
@@ -45,18 +45,18 @@ for nc in ncs:
         print("nc: {}\t beta: {}\t True TTE: {}".format(nc,beta,TTE))
         
         for _ in range(r//1000):
-            for (q,TTE_pi,TTE_dm, TTE_dmt, TTE_ht) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cls[nc],q,1000,beta))(q) for q in qs):
-                data["q"] += [q]*4000
-                data["beta"] += [beta]*4000
-                data["nc"] += [nc]*4000
+            for (q,TTE_pi,TTE_dm, TTE_dmt) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cls[nc],q,1000,beta))(q) for q in qs):
+                data["q"] += [q]*3000
+                data["beta"] += [beta]*3000
+                data["nc"] += [nc]*3000
                 data["est"] += ["PI"]*1000
                 data["tte_hat"] += list(TTE_pi - TTE)
                 data["est"] += ["DM"]*1000
                 data["tte_hat"] += list(TTE_dm - TTE)
                 data["est"] += ["DM(0.25)"]*1000
                 data["tte_hat"] += list(TTE_dmt - TTE)
-                data["est"] += ["HT"]*1000
-                data["tte_hat"] += list(TTE_ht - TTE)
+                # data["est"] += ["HT"]*1000
+                # data["tte_hat"] += list(TTE_ht - TTE)
 
 file = open("all_est_data.pkl", "wb")
 pickle.dump((data), file)

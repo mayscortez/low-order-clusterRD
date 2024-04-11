@@ -1,61 +1,112 @@
 import re
+import scipy
 import pickle
 import pymetis
 import numpy as np
-import scipy.sparse
+import networkx as nx
 from joblib import Parallel, delayed 
 
-print("Importing Product Features")
+print("Reading Metadata File")
 
-feature_dict = {} # dictionary mapping each product to list of categories
+products = []
 
-for category,products in enumerate(open("communities_5000.txt", "r")):
-    for product in re.split("[\t\n]",products)[:-1]:
-        product = int(product)
-        if product not in feature_dict:
-            feature_dict[product] = [category]
-        else:
-            feature_dict[product].append(category)
+current = {}
+accept = False
 
-n = len(feature_dict)
-id = { u:i for (i,u) in enumerate(feature_dict.keys())} # dictionary mapping products in these categories to a unique id
+for line in open("amazon-meta.txt", "r"):
+    if re.match("^Id:.*$",line):
+        if accept:
+            products.append(current)
 
-features = np.zeros((n,5000))
-for i,fi in feature_dict.items():
-    features[id[i],fi] = 1
+        current = {"categories":[]}
+        accept = True
+    elif re.match("^ASIN:.*$",line):
+        asin = re.match("^ASIN:\\s*([0-9A-Z]*)$",line).group(1)
+        current["id"] = asin
+    elif re.match("^\\s*discontinued.*$",line):
+        accept = False
+    elif re.match("^\\s*group:.*$",line):
+        group = re.match("^\\s*group: (.*)$",line).group(1)
+        if group != "DVD": #and group != "Video":
+            accept = False
+    elif re.match("\\s*salesrank:\\s*[0-9].*$",line):
+       rank = int(re.match("\\s*salesrank:\\s*([0-9]*)$",line).group(1))
+       current["rank"] = rank
+    elif re.match("^\\s*similar:.*$",line):
+       similar_list = re.match("\\s*similar:\\s*[0-9]*\\s*(.*)$",line).group(1)
+       similar_asins = re.split("\\s\\s*",similar_list)
+       current["neighbors"] = similar_asins
+    elif re.match("^\\s*\\|.*$",line):
+       category = int(re.match("^.*\\[([0-9]*)\\]$",line).group(1))
+       current["categories"].append(category)
 
-print("Importing Product Edges")
+n = len(products)
+print("Found {} movies".format(n))
 
-G_dict = { i:[i] for i in range(n)}  # dictionary mapping each product to list of neighbors
+print("Assigning sequential ids to products")
 
-for line in open("edges.txt", "r"):
-    m = re.match("^([0-9]*)\t([0-9]*)$",line)
-    u,v = m.group(1,2)
-    u,v = int(u),int(v)
+id_dict = {}
+for i,product in enumerate(products):
+    id_dict[product["id"]] = i
 
-    if u not in feature_dict or v not in feature_dict: continue
+for product in products:
+    product["id"] = id_dict[product["id"]]
+    product["neighbors"] = [id_dict[s] for s in product["neighbors"] if s in id_dict]
 
-    G_dict[id[u]].append(id[v])
-    G_dict[id[v]].append(id[u])
+# symmetrize
+for i in range(n):
+    for j in products[i]["neighbors"]:
+        products[j]["neighbors"].append(i)
+
+print("Restrict to largest connected component")
+
+G1 = scipy.sparse.lil_array((n,n))
+
+for p in products:
+    i = p["id"]
+    for j in p["neighbors"]:
+        G1[i,j] = 1
+        G1[j,i] = 1
+
+G1 = nx.to_networkx_graph(G1)
+largest_cc = max(nx.connected_components(G1), key=len)
+
+products = [p for p in products if p["id"] in largest_cc]
+n = len(products)
+print("Reduced to {} movies".format(n))
+
+new_ids = {}
+for (i,p) in enumerate(products):
+    new_ids[p["id"]] = i
+
+for product in products:
+    product["id"] = new_ids[product["id"]]
+    product["neighbors"] = [new_ids[s] for s in product["neighbors"]]
+
+print("Forming Product Graph")
 
 G = scipy.sparse.lil_array((n,n))
-    
-for i in range(n):
-    G[i,G_dict[i]] = 1
+
+for p in products:
+    i = p["id"]
+    G[i,i] = 1
+    for j in p["neighbors"]:
+        G[i,j] = 1
 
 G = G.tocsr()
 
 print("Constructing Feature Graph")
 
-A = features @ features.T
-
 xadj = [0]
 adjncy = []
 eweights = []
 for i in range(n):
-    for j in np.nonzero(A[i,:])[0]:
-        adjncy.append(j)
-        eweights.append(int(A[i,j]))
+    if i%1000 == 0: print(i)
+    for j in range(n):
+        l = len(set(products[i]["neighbors"]).intersection(set(products[j]["neighbors"])))
+        if l > 0:
+            adjncy.append(j)
+            eweights.append(l)
     xadj.append(len(adjncy))
 
 print("Computing Clusterings")
@@ -67,6 +118,6 @@ for (nc,(_,membership)) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda nc : (
         Cl.append(np.where(membership == i)[0])
     Cls[nc] = Cl
 
-file = open("network_data.pkl", "wb")
+file = open("data.pkl", "wb")
 pickle.dump((G,Cls), file)
 file.close()
