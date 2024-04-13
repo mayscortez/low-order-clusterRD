@@ -1,20 +1,43 @@
-import seaborn.objects as so
-import pandas as pd
 import pickle
+import argparse
+import pandas as pd
+import seaborn as sns
+import matplotlib.pyplot as plt
 
-file = open('../Experiments/all_est_data.pkl', 'rb')
+# basic plot:            col = nc, row = beta
+# compare clustering:    col = clustering, row = nc
+
+file = open('../Experiments/compare_estimators.pkl', 'rb')
 data = pickle.load(file)
 file.close()
 
 df = pd.DataFrame(data)
 
-p = (
-    so.Plot(df, x='q', y='tte_hat', color='est')
-    .facet(row='beta', col='nc')
-    .add(so.Line(), so.Agg())                 # line plot of expected bias
-    .add(so.Band(), so.Est(errorbar='sd'))    # shading for standard deviation
-    .layout(size=(10,8))
-)
+colors = ["tab:blue","tab:orange","tab:green","tab:red","tab:purple"]
 
-p.show()
-p.save("compare_estimators.png")
+sns.set_theme()
+
+rows = df["beta"].unique()
+nrow = len(rows)
+
+cols = df["nc"].unique()
+ncol = len(cols)
+
+f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
+plt.setp(ax,ylim=(-5,5))
+
+for i in range(nrow):
+    ax[i,0].set_ylabel("beta={}".format(rows[i]))
+    for j in range(ncol):
+        cell_df = df[(df["beta"] == rows[i]) & (df["nc"] == cols[j])]
+
+        for k,est in enumerate(cell_df["est"].unique()):
+            line_df = cell_df[(cell_df["est"] == est)]
+            ax[i,j].plot(line_df['q'], line_df['bias'], color=colors[k])
+            ax[i,j].fill_between(line_df['q'], line_df['bias']-line_df['sd'], line_df['bias']+line_df['sd'], color=colors[k], alpha=0.2)
+
+for j in range(ncol):
+    ax[0,j].set_title("nc={}".format(cols[j]))
+
+plt.show()
+f.savefig("compare_estimators.png")

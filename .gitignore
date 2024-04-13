@@ -122,29 +122,6 @@ ENV/
 env.bak/
 venv.bak/
 
-# Spyder project settings
-.spyderproject
-.spyproject
-
-# Rope project settings
-.ropeproject
-
-# mkdocs documentation
-/site
-
-# mypy
-.mypy_cache/
-.dmypy.json
-dmypy.json
-
-# Pyre type checker
-.pyre/
-
-# pytype static type analyzer
-.pytype/
-
-# Cython debug symbols
-cython_debug/
 
 # PyCharm
 #  JetBrains specific template is maintainted in a separate JetBrains.gitignore that can
@@ -160,6 +137,4 @@ Increasing Edges/plots/deg3/.DS_Store
 .DS_Store
 plots/.DS_Store
 .DS_Store
-.png
-*.png
 Neurips_Experiments/Amazon/Network/amazon-meta.txt

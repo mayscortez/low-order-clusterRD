@@ -11,10 +11,10 @@ print("Loading Graph")
 file = open("../Network/data.pkl", "rb")
 G,Cls = pickle.load(file)
 n = G.shape[0]
-
-print("Calculating Homophily Effects")
-
 h = homophily_effects(G)
+fY = pom_ugander_yin(G,h,2)
+TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
+print("True TTE: {}".format(TTE))
 
 # parameters
 ncs = [100,300,500]         # number of clusters
@@ -22,18 +22,21 @@ p = 0.1                     # treatment budget
 qs = np.linspace(p,1,16)    # effective treatment budget
 r = 1000                    # number of replications
 
-data = { "q": [], "clustering": [], "tte_hat": [], "est": [], "nc": [] }
+##############################################
+
+data = { "q":[], "clustering":[], "nc":[], "bias":[], "var":[], "var_s":[]}
 
 def estimate_two_stage(fY,Cl,q,r,beta):
     Q = np.linspace(0, q, beta+1)
-    Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,r)  # U is n x r
-    tte_hat = pi_estimate_tte_two_stage(fY(Z),p/q,Q)
-    e_tte_hat_given_u = q/(n*p)*np.sum(fY(U) - fY(np.zeros(n)),axis=1)
+
+    tte_hat = []
+    e_tte_hat_given_u = []
+    for _ in range(r//1000):
+        Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,1000)  # U is n x r
+        tte_hat = np.append(tte_hat,pi_estimate_tte_two_stage(fY(Z),p/q,Q))
+        e_tte_hat_given_u = np.append(e_tte_hat_given_u, q/(n*p)*np.sum(fY(U) - fY(np.zeros(n)),axis=1))
 
     return (q, tte_hat, e_tte_hat_given_u)
-
-fY = pom_ugander_yin(G,h,2)
-TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
 
 for nc in ncs:
     print("Preparing Clusterings with {} Clusters".format(nc))
@@ -70,16 +73,20 @@ for nc in ncs:
     for label,Cl in clusterings.items():
         print("nc: {}\t Clustering: {}\t True TTE: {}".format(nc, label,TTE))
 
-        for _ in range(r//1000):
-            for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cl,q,1000,2))(q) for q in qs):
-                data["q"] += [q]*2000
-                data["clustering"] += [label]*2000
-                data["nc"] += [nc]*2000
-                data["est"] += ["real"]*1000
-                data["tte_hat"] += list(TTE_hat - TTE)
-                data["est"] += ["exp"]*1000
-                data["tte_hat"] += list(E_given_U - TTE)
+        for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda q : estimate_two_stage(fY,Cl,q,r,2))(q) for q in qs):
+            data["q"].append(q)
+            data["clustering"].append(label)
+            data["nc"].append(nc)
 
-file = open("compare_clusterings_data.pkl", "wb")
-pickle.dump((data), file)
+            mean = np.average(TTE_hat)
+            variance = np.average((TTE_hat - mean)**2)
+            s_mean = np.average(E_given_U)
+            s_variance = np.average((E_given_U - s_mean)**2)
+
+            data["bias"].append(mean - TTE)
+            data["var"].append(variance)
+            data["var_s"].append(s_variance)
+
+file = open("compare_clusterings.pkl", "wb")
+pickle.dump(data, file)
 file.close()

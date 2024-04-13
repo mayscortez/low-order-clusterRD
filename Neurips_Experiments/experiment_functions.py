@@ -1,6 +1,9 @@
 import numpy as np
+from numpy.random import RandomState
 from scipy.special import binom
 import scipy
+
+rng = RandomState(178591)
 
 ######## Constructed Networks ########
 
@@ -15,9 +18,9 @@ def sbm(n,k,pii,pij):
 
     c = n//k  # community size
 
-    A = (np.random.rand(n,n) < pij) + 0
+    A = (rng.rand(n,n) < pij) + 0
     for i in range(k):
-        A[i*c:(i+1)*c,i*c:(i+1)*c] = (np.random.rand(c,c) < pii) + 0
+        A[i*c:(i+1)*c,i*c:(i+1)*c] = (rng.rand(c,c) < pii) + 0
 
     A[range(n),range(n)] = 1   # everyone is affected by their own treatment
 
@@ -86,13 +89,13 @@ def pom_ugander_yin(G,h,beta):
     d = np.ones(n) @ G         # vertex degrees
     dbar = np.sum(d)/n
 
-    baseline = ( a + b * h + sigma * np.random.normal(size=n) ) * d/dbar
+    baseline = ( a + b * h + sigma * rng.normal(size=n) ) * d/dbar
 
     C = np.empty((beta+1,n)) # C[k,i] = uniform effect coefficient c_i,S for |S| = k, excluding individual boost delta
     C[0,:] = baseline
 
     for k in range(1,beta+1):
-        C[k,:] = baseline * (gamma[k] + tau * np.random.normal(size=n))
+        C[k,:] = baseline * (gamma[k] + tau * rng.normal(size=n))
 
     return lambda Z : _outcomes(Z,G,C,d,beta,delta)
 
@@ -147,7 +150,7 @@ def pom_market(G,h,beta):
     d = np.ones(n) @ G         # vertex (complement) degrees
     dbar = np.sum(d)/n
     
-    baseline = ( a + b * h + np.random.normal(scale=sigma, size=n) ) * d/dbar
+    baseline = ( a + b * h + rng.normal(scale=sigma, size=n) ) * d/dbar
 
     S = ((G @ G).sign() - G).astype(np.uint8)
     dp = np.ones(n) @ (S+G)        # degree of 2-neighborhood
@@ -172,10 +175,10 @@ def staggered_rollout_two_stage(n,Cl,poq,Q,r=1):
     for (j,cl) in enumerate(Cl):
         T[j,cl] = 1
 
-    selection_mask = ((np.random.rand(r,k) < poq) + 0) @ T
+    selection_mask = ((rng.rand(r,k) < poq) + 0) @ T
 
     Z = np.zeros((len(Q),r,n))
-    U = np.random.rand(r,n)     # random values that determine when individual i starts being treated
+    U = rng.rand(r,n)     # random values that determine when individual i starts being treated
 
     for t in range(len(Q)):
         Z[t,:,:] = (U < Q[t]) + 0
@@ -321,6 +324,55 @@ def ht_estimate_tte(Z,Y,G,Cl,p,Q):
 
     HT_data = np.sum(YY * Ni_fully_treated/prob_fully_treated, axis=2)  # r x T
     HT_data -= np.sum(YY * Ni_fully_control/prob_fully_control, axis=2)   
+    HT_data /= n
+    return np.sum(HT_data,axis=1)/T
+
+def hajek_estimate_tte(Z,Y,G,Cl,p,Q):
+    '''
+    Returns TTE Horvitz-Thompson estimate
+        Z = treatment assignments: beta x r x n
+        Y = potential outcomes function: {0,1}^n -> R^n
+        G = causal network (this estimator is not graph agnostic)
+        Cl = clusters, list of lists that partition [n]
+        p = treatment budget
+        Q = treatment probabilities of selected units for each time step: beta+1
+    '''
+    T,_,n = Z.shape
+
+    ZZ = np.transpose(Z,(1,0,2))  # r x T x n
+    YY = np.transpose(Y,(1,0,2))  # r x T x n
+
+    N = []
+    for i in range(n):
+        N.append(G[[i],:].nonzero()[1])
+
+    ncs = _neighborhood_cluster_sizes(N,Cl)
+    d = ncs.sum(axis=1)               # degree
+    for i in range(n):
+        assert(d[i] == len(N[i]))
+    cd = np.count_nonzero(ncs,axis=1) # cluster degree
+
+    Ni_fully_treated = np.empty_like(ZZ)
+    for i in range(n):
+        Ni_fully_treated[:,:,i] = np.prod(ZZ[:,:,N[i]],axis=2)
+
+    Ni_fully_control = np.empty_like(ZZ)
+    for i in range(n):
+        Ni_fully_control[:,:,i] = np.prod(1-ZZ[:,:,N[i]],axis=2)
+
+    prob_fully_treated = np.empty((T,n))
+    for t in range(T):
+        prob_fully_treated[t,:] = np.power(p/Q[t],cd) * np.power(Q[t],d)
+
+    prob_fully_control = np.empty((T,n))
+    for t in range(T):
+        prob_fully_control[t,:] = np.prod(1 - p/Q[t]*(1-np.power(1-Q[t],ncs)),axis=1)
+
+    nhat = np.sum(Ni_fully_treated/prob_fully_treated, axis=2)
+
+    HT_data = np.sum(YY * Ni_fully_treated/prob_fully_treated, axis=2)  # r x T
+    HT_data -= np.sum(YY * Ni_fully_control/prob_fully_control, axis=2)   
+    HT_data /= nhat
 
     return np.sum(HT_data,axis=1)/T
 
