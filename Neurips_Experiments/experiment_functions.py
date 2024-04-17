@@ -41,7 +41,9 @@ def homophily_effects(G):
     _,eigvecs_s = scipy.sparse.linalg.eigs(normalized_laplacian,k=2,which='SM')
     h = eigvecs_s[:,1].real
 
-    return h/(max(abs(max(h)),abs(min(h))))
+    h = 2*(h-min(h))/(max(h)-min(h)) - 1   # adjust so smallest value is -1 and largest value is 1
+
+    return h
 
 def _outcomes(Z,G,C,d,beta,delta):
     '''
@@ -83,7 +85,7 @@ def pom_ugander_yin(G,h,beta):
     sigma = 0.1                                   # magnitude of random perturbation on baselines
     delta = 0.5                                   # magnitude of direct effect
     gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
-    tau = 0.01                                    # magnitude of random perturbation on treatment effects
+    tau = 0                                       # magnitude of random perturbation on treatment effects
 
     n = G.shape[0]
     d = np.ones(n) @ G         # vertex degrees
@@ -231,7 +233,7 @@ def dm_estimate_tte(Z,Y):
 
     DM_data = np.sum(Y*Z,axis=2)/np.maximum(num_treated,1)          # (beta+1) x r
     DM_data -= np.sum(Y*(1-Z),axis=2)/np.maximum(n-num_treated,1)  
-    return np.sum(DM_data[1:,:],axis=0)/(T-1)
+    return np.sum(DM_data[1:,:],axis=0)/T
 
 
 def dm_threshold_estimate_tte(Z,Y,G,gamma):
@@ -247,7 +249,7 @@ def dm_threshold_estimate_tte(Z,Y,G,gamma):
 
     T,_,n = Z.shape
 
-    d = np.ones(n) @ G                # vertex degrees
+    d = np.ones(n) @ G                             # vertex degrees
     num_Ni_treated = np.empty_like(Z)              # number of treated neighbors
     for t in range(T):
         num_Ni_treated[t,:,:] = Z[t,:,:] @ G
@@ -260,7 +262,7 @@ def dm_threshold_estimate_tte(Z,Y,G,gamma):
 
     DM_data = np.sum(Y*sufficiently_treated,axis=2)/np.maximum(num_sufficiently_treated,1)          # (beta+1) x r
     DM_data -= np.sum(Y*sufficiently_control,axis=2)/np.maximum(num_sufficiently_control,1)  
-    return np.sum(DM_data[1:,:],axis=0)/(T-1)
+    return np.sum(DM_data[1:,:],axis=0)/T
 
 def _neighborhood_cluster_sizes(N,Cl):
     '''
@@ -270,7 +272,7 @@ def _neighborhood_cluster_sizes(N,Cl):
     '''
     n = len(N)
 
-    membership = np.zeros(n,dtype=np.uint8)
+    membership = np.zeros(n,dtype=np.uint32)
     for i,C in enumerate(Cl):
         membership[C] = i
 
@@ -298,12 +300,10 @@ def ht_estimate_tte(Z,Y,G,Cl,p,Q):
 
     N = []
     for i in range(n):
-        N.append(G[[i],:].nonzero()[1])
+        N.append(G[:,[i]].nonzero()[0])
 
     ncs = _neighborhood_cluster_sizes(N,Cl)
     d = ncs.sum(axis=1)               # degree
-    for i in range(n):
-        assert(d[i] == len(N[i]))
     cd = np.count_nonzero(ncs,axis=1) # cluster degree
 
     Ni_fully_treated = np.empty_like(ZZ)
@@ -360,11 +360,11 @@ def hajek_estimate_tte(Z,Y,G,Cl,p,Q):
     for i in range(n):
         Ni_fully_control[:,:,i] = np.prod(1-ZZ[:,:,N[i]],axis=2)
 
-    prob_fully_treated = np.empty((T,n))
+    prob_fully_treated = np.empty((T,n), dytpe=np.longdouble)
     for t in range(T):
         prob_fully_treated[t,:] = np.power(p/Q[t],cd) * np.power(Q[t],d)
 
-    prob_fully_control = np.empty((T,n))
+    prob_fully_control = np.empty((T,n), dytpe=np.longdouble)
     for t in range(T):
         prob_fully_control[t,:] = np.prod(1 - p/Q[t]*(1-np.power(1-Q[t],ncs)),axis=1)
 

@@ -6,42 +6,13 @@ import numpy as np
 import networkx as nx
 from joblib import Parallel, delayed 
 
-print("Reading Metadata File")
+print("Loading Products")
 
-products = []
-
-current = {}
-accept = False
-
-for line in open("amazon-meta.txt", "r"):
-    if re.match("^Id:.*$",line):
-        if accept:
-            products.append(current)
-
-        current = {"categories":[]}
-        accept = True
-    elif re.match("^ASIN:.*$",line):
-        asin = re.match("^ASIN:\\s*([0-9A-Z]*)$",line).group(1)
-        current["id"] = asin
-    elif re.match("^\\s*discontinued.*$",line):
-        accept = False
-    elif re.match("^\\s*group:.*$",line):
-        group = re.match("^\\s*group: (.*)$",line).group(1)
-        if group != "DVD": #and group != "Video":
-            accept = False
-    elif re.match("\\s*salesrank:\\s*[0-9].*$",line):
-       rank = int(re.match("\\s*salesrank:\\s*([0-9]*)$",line).group(1))
-       current["rank"] = rank
-    elif re.match("^\\s*similar:.*$",line):
-       similar_list = re.match("\\s*similar:\\s*[0-9]*\\s*(.*)$",line).group(1)
-       similar_asins = re.split("\\s\\s*",similar_list)
-       current["neighbors"] = similar_asins
-    elif re.match("^\\s*\\|.*$",line):
-       category = int(re.match("^.*\\[([0-9]*)\\]$",line).group(1))
-       current["categories"].append(category)
+file = open("products.pkl", "rb")
+products = pickle.load(file)
 
 n = len(products)
-print("Found {} movies".format(n))
+print("Found {} DVDs".format(n))
 
 print("Assigning sequential ids to products")
 
@@ -53,35 +24,35 @@ for product in products:
     product["id"] = id_dict[product["id"]]
     product["neighbors"] = [id_dict[s] for s in product["neighbors"] if s in id_dict]
 
-# symmetrize
-for i in range(n):
-    for j in products[i]["neighbors"]:
-        products[j]["neighbors"].append(i)
+# # symmetrize
+# for i in range(n):
+#     for j in products[i]["neighbors"]:
+#         products[j]["neighbors"].append(i)
 
-print("Restrict to largest connected component")
+# print("Restrict to largest connected component")
 
-G1 = scipy.sparse.lil_array((n,n))
+# G1 = scipy.sparse.lil_array((n,n))
 
-for p in products:
-    i = p["id"]
-    for j in p["neighbors"]:
-        G1[i,j] = 1
-        G1[j,i] = 1
+# for p in products:
+#     i = p["id"]
+#     for j in p["neighbors"]:
+#         G1[i,j] = 1
+#         G1[j,i] = 1
 
-G1 = nx.to_networkx_graph(G1)
-largest_cc = max(nx.connected_components(G1), key=len)
+# G1 = nx.to_networkx_graph(G1)
+# largest_cc = max(nx.connected_components(G1), key=len)
 
-products = [p for p in products if p["id"] in largest_cc]
-n = len(products)
-print("Reduced to {} movies".format(n))
+# products = [p for p in products if p["id"] in largest_cc]
+# n = len(products)
+# print("Reduced to {} movies".format(n))
 
-new_ids = {}
-for (i,p) in enumerate(products):
-    new_ids[p["id"]] = i
+# new_ids = {}
+# for (i,p) in enumerate(products):
+#     new_ids[p["id"]] = i
 
-for product in products:
-    product["id"] = new_ids[product["id"]]
-    product["neighbors"] = [new_ids[s] for s in product["neighbors"]]
+# for product in products:
+#     product["id"] = new_ids[product["id"]]
+#     product["neighbors"] = [new_ids[s] for s in product["neighbors"]]
 
 print("Forming Product Graph")
 
@@ -103,7 +74,7 @@ eweights = []
 for i in range(n):
     if i%1000 == 0: print(i)
     for j in range(n):
-        l = len(set(products[i]["neighbors"]).intersection(set(products[j]["neighbors"])))
+        l = len(set(products[i]["categories"]).intersection(set(products[j]["categories"])))
         if l > 0:
             adjncy.append(j)
             eweights.append(l)
@@ -118,6 +89,6 @@ for (nc,(_,membership)) in Parallel(n_jobs=-1, verbose=20)(delayed(lambda nc : (
         Cl.append(np.where(membership == i)[0])
     Cls[nc] = Cl
 
-file = open("data.pkl", "wb")
+file = open("data_disconnected.pkl", "wb")
 pickle.dump((G,Cls), file)
 file.close()

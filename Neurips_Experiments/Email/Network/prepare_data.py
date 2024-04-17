@@ -29,10 +29,10 @@ for line in open("communities.txt", "r"):
 
     membership[v] = c
 
-Cl = []
+Cls = {42:[]}
 for i in range(int(np.max(membership))+1):
-    Cl.append(list(np.where(membership == i)[0]))
+    Cls[42].append(list(np.where(membership == i)[0]))
 
 file = open("data.pkl", "wb")
-pickle.dump((G,Cl,membership), file)
+pickle.dump((G,Cls), file)
 file.close()

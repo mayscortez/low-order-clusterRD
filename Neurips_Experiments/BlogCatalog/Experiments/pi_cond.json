@@ -1,0 +1,13 @@
+{ 
+    "name" : "pi_cond", 
+    "network" : "BlogCatalog",
+    "input" : "Network/data.pkl",
+    "vary" : {
+        "nc" : [10,30,50],
+        "beta" : [1,2]
+    },
+    "fix" : {
+        "p" : 0.1
+    },
+    "replications" : 10000
+}

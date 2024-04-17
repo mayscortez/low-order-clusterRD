@@ -1,0 +1,13 @@
+{ 
+    "name" : "vary_p", 
+    "network" : "Amazon",
+    "input" : "Network/data.pkl",
+    "vary" : {
+        "nc" : [50,200,500],
+        "p" : [0.1,0.2,0.3]
+    },
+    "fix" : {
+        "beta" : 2
+    },
+    "replications" : 2000
+}

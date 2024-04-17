@@ -1,6 +1,6 @@
 From: 
 
-@inproceedings{nr,
+@inproceedings{network_repo,
      title={The Network Data Repository with Interactive Graph Analytics and Visualization},
      author={Ryan A. Rossi and Nesreen K. Ahmed},
      booktitle={AAAI},
@@ -58,7 +58,7 @@ https://snap.stanford.edu/data/amazon-meta.html
 Directed Graph
 vertices = products (DVDs)          (19,828) -> (14,436)
 edges = co-purchases                (70,832)
-communities = product category      (?)
+communities = product category      (13,591)
 min degree = 1
 max degree = 247
 avg degree = 5

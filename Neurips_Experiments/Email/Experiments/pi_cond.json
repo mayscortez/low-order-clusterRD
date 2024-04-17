@@ -1,0 +1,13 @@
+{ 
+    "name" : "pi_cond", 
+    "network" : "Email",
+    "input" : "Network/data.pkl",
+    "vary" : {
+        "beta" : [1,2], 
+        "p" : [0.05, 0.1, 0.2]
+    },
+    "fix" : {
+        "nc" : 42
+    },
+    "replications" : 10000
+}
