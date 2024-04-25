@@ -1,5 +1,5 @@
 { 
-    "name" : "compare_estimators_new", 
+    "name" : "compare_estimators", 
     "network" : "Amazon",
     "input" : "Network/data.pkl",
     "vary" : {
@@ -7,8 +7,8 @@
     },
     "fix" : {
         "q" : 0.4,
-        "nc" : 200
+        "nc" : 500
     },
-    "replications" : 1000,
+    "replications" : 10000,
     "gamma" : 0.25
 }

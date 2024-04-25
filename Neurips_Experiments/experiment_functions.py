@@ -3,7 +3,7 @@ from numpy.random import RandomState
 from scipy.special import binom
 import scipy
 
-rng = RandomState(178591)
+rng = RandomState(1785931)
 
 ######## Constructed Networks ########
 
@@ -162,12 +162,12 @@ def pom_market(G,h,beta):
 
 ######## Treatment Assignments ########
 
-def staggered_rollout_two_stage(n,Cl,poq,Q,r=1):
+def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
     '''
         Returns treatment samples from Bernoulli staggered rollout: (beta+1) x r x n
         n = number of individuals
         Cl = clusters, list of lists that partition [n]
-        poq = cluster selection probability
+        p = treatment budget
         Q = treatment probabilities of selected units for each time step: beta+1
         r = number of replications
     '''
@@ -177,7 +177,7 @@ def staggered_rollout_two_stage(n,Cl,poq,Q,r=1):
     for (j,cl) in enumerate(Cl):
         T[j,cl] = 1
 
-    selection_mask = ((rng.rand(r,k) < poq) + 0) @ T
+    selection_mask = ((rng.rand(r,k) < p/Q[-1]) + 0) @ T
 
     Z = np.zeros((len(Q),r,n))
     U = rng.rand(r,n)     # random values that determine when individual i starts being treated
@@ -206,7 +206,7 @@ def _interp_coefficients(P):
 
     return H
 
-def pi_estimate_tte_two_stage(Y,poq,Q):
+def pi_estimate_tte_two_stage(Y,p,Q):
     '''
     Returns TTE estimate from polynomial interpolation
         Y = potential outcomes: (beta+1) x r x n
@@ -216,7 +216,7 @@ def pi_estimate_tte_two_stage(Y,poq,Q):
     n = Y.shape[-1]
     H = _interp_coefficients(Q)
     
-    return 1/(n*poq) * H @ np.sum(Y,axis=-1)
+    return 1/(n*p/Q[-1]) * H @ np.sum(Y,axis=-1)
 
 
 ######## Other Estimators ########
@@ -283,20 +283,17 @@ def _neighborhood_cluster_sizes(N,Cl):
     
     return neighborhood_cluster_sizes
 
-def ht_estimate_tte(Z,Y,G,Cl,p,Q):
+def ht_hajek_estimate_tte(Z,Y,G,Cl,p,q):
     '''
-    Returns TTE Horvitz-Thompson estimate
-        Z = treatment assignments: beta x r x n
+    Returns TTE Horvitz-Thompson/Hajek estimates
+        Z = treatment assignments: r x n
         Y = potential outcomes function: {0,1}^n -> R^n
         G = causal network (this estimator is not graph agnostic)
         Cl = clusters, list of lists that partition [n]
         p = treatment budget
-        Q = treatment probabilities of selected units for each time step: beta+1
+        q = treatment probabilities in selected clusters
     '''
-    T,_,n = Z.shape
-
-    ZZ = np.transpose(Z,(1,0,2))  # r x T x n
-    YY = np.transpose(Y,(1,0,2))  # r x T x n
+    _,n = Z.shape
 
     N = []
     for i in range(n):
@@ -306,75 +303,22 @@ def ht_estimate_tte(Z,Y,G,Cl,p,Q):
     d = ncs.sum(axis=1)               # degree
     cd = np.count_nonzero(ncs,axis=1) # cluster degree
 
-    Ni_fully_treated = np.empty_like(ZZ)
+    Ni_fully_treated = np.empty_like(Z)
     for i in range(n):
-        Ni_fully_treated[:,:,i] = np.prod(ZZ[:,:,N[i]],axis=2)
+        Ni_fully_treated[:,i] = np.prod(Z[:,N[i]],axis=1)
 
-    Ni_fully_control = np.empty_like(ZZ)
+    Ni_fully_control = np.empty_like(Z)
     for i in range(n):
-        Ni_fully_control[:,:,i] = np.prod(1-ZZ[:,:,N[i]],axis=2)
+        Ni_fully_control[:,i] = np.prod(1-Z[:,N[i]],axis=1)
 
-    prob_fully_treated = np.empty((T,n))
-    for t in range(T):
-        prob_fully_treated[t,:] = np.power(p/Q[t],cd) * np.power(Q[t],d)
+    prob_fully_treated = np.power(p/q,cd) * np.power(q,d)
+    prob_fully_control = np.prod(1 - p/q*(1-np.power(1-q,ncs)),axis=1)
 
-    prob_fully_control = np.empty((T,n))
-    for t in range(T):
-        prob_fully_control[t,:] = np.prod(1 - p/Q[t]*(1-np.power(1-Q[t],ncs)),axis=1)
+    nhat = np.sum(Ni_fully_treated/prob_fully_treated, axis=1)
 
-    HT_data = np.sum(YY * Ni_fully_treated/prob_fully_treated, axis=2)  # r x T
-    HT_data -= np.sum(YY * Ni_fully_control/prob_fully_control, axis=2)   
-    HT_data /= n
-    return np.sum(HT_data,axis=1)/T
-
-def hajek_estimate_tte(Z,Y,G,Cl,p,Q):
-    '''
-    Returns TTE Horvitz-Thompson estimate
-        Z = treatment assignments: beta x r x n
-        Y = potential outcomes function: {0,1}^n -> R^n
-        G = causal network (this estimator is not graph agnostic)
-        Cl = clusters, list of lists that partition [n]
-        p = treatment budget
-        Q = treatment probabilities of selected units for each time step: beta+1
-    '''
-    T,_,n = Z.shape
-
-    ZZ = np.transpose(Z,(1,0,2))  # r x T x n
-    YY = np.transpose(Y,(1,0,2))  # r x T x n
-
-    N = []
-    for i in range(n):
-        N.append(G[[i],:].nonzero()[1])
-
-    ncs = _neighborhood_cluster_sizes(N,Cl)
-    d = ncs.sum(axis=1)               # degree
-    for i in range(n):
-        assert(d[i] == len(N[i]))
-    cd = np.count_nonzero(ncs,axis=1) # cluster degree
-
-    Ni_fully_treated = np.empty_like(ZZ)
-    for i in range(n):
-        Ni_fully_treated[:,:,i] = np.prod(ZZ[:,:,N[i]],axis=2)
-
-    Ni_fully_control = np.empty_like(ZZ)
-    for i in range(n):
-        Ni_fully_control[:,:,i] = np.prod(1-ZZ[:,:,N[i]],axis=2)
-
-    prob_fully_treated = np.empty((T,n), dytpe=np.longdouble)
-    for t in range(T):
-        prob_fully_treated[t,:] = np.power(p/Q[t],cd) * np.power(Q[t],d)
-
-    prob_fully_control = np.empty((T,n), dytpe=np.longdouble)
-    for t in range(T):
-        prob_fully_control[t,:] = np.prod(1 - p/Q[t]*(1-np.power(1-Q[t],ncs)),axis=1)
-
-    nhat = np.sum(Ni_fully_treated/prob_fully_treated, axis=2)
-
-    HT_data = np.sum(YY * Ni_fully_treated/prob_fully_treated, axis=2)  # r x T
-    HT_data -= np.sum(YY * Ni_fully_control/prob_fully_control, axis=2)   
-    HT_data /= nhat
-
-    return np.sum(HT_data,axis=1)/T
+    HT_data = np.sum(Y * Ni_fully_treated/prob_fully_treated, axis=1)
+    HT_data -= np.sum(Y * Ni_fully_control/prob_fully_control, axis=1)   
+    return (HT_data/n,HT_data/nhat)
 
 ######## Utility Function for Computing Effect Sizes ########
 

@@ -34,10 +34,9 @@ def estimate_two_stage(fY,Cl,q,r,beta):
 
     tte_hat = []
     e_tte_hat_given_u = []
-    for _ in range(r//1000):
-        Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,1000)  # U is n x r
-        tte_hat = np.append(tte_hat,pi_estimate_tte_two_stage(fY(Z),p/q,Q))
-        e_tte_hat_given_u = np.append(e_tte_hat_given_u, q/(n*p)*np.sum(fY(U) - fY(np.zeros(n)),axis=1))
+    Z,U = staggered_rollout_two_stage(n,Cl,p,Q,r) 
+    tte_hat = np.append(tte_hat,pi_estimate_tte_two_stage(fY(Z),p,Q))
+    e_tte_hat_given_u = np.append(e_tte_hat_given_u, q/(n*p)*np.sum(fY(U) - fY(np.zeros(n)),axis=1))
 
     return (q, tte_hat, e_tte_hat_given_u)
 
@@ -45,7 +44,7 @@ TTE_hat_dict = { beta:{ q:[] for q in qs} for beta in betas}
 Bias_dict = { beta:{ q:[] for q in qs} for beta in betas}
 E_given_U_dict = { beta:{ q:[] for q in qs} for beta in betas}
 
-for _ in range():
+for _ in range(20):
     G = sbm(n,k,pii,pij)
     h = homophily_effects(G)
 
@@ -55,16 +54,20 @@ for _ in range():
 
         for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=5)(delayed(lambda q : estimate_two_stage(fY,Cl,q,r,beta))(q) for q in qs):
             Bias_dict[beta][q].append(TTE_hat - TTE_true)
-            TTE_hat_dict[beta][q].append(TTE_hat)
-            E_given_U_dict[beta][q].append(E_given_U)
+            #TTE_hat_dict[beta][q].append(TTE_hat)
+            #E_given_U_dict[beta][q].append(E_given_U)
+            TTE_hat_dict[beta][q].append(np.average((TTE_hat-np.average(TTE_hat))**2))
+            E_given_U_dict[beta][q].append(np.average((E_given_U-np.average(E_given_U))**2))
 
 for beta in betas:
     for q in qs:
         data["q"].append(q)
         data["beta"].append(beta)
         data["bias"].append(np.average(Bias_dict[beta][q]))
-        data["var"].append(np.average((TTE_hat_dict[beta][q] - np.average(TTE_hat_dict[beta][q]))**2))
-        data["var_s"].append(np.average((E_given_U_dict[beta][q] - np.average(E_given_U_dict[beta][q]))**2))
+        data["var"].append(np.average(TTE_hat_dict[beta][q]))
+        data["var_s"].append(np.average(E_given_U_dict[beta][q]))
+        # data["var"].append(np.average((TTE_hat_dict[beta][q] - np.average(TTE_hat_dict[beta][q]))**2))
+        # data["var_s"].append(np.average((E_given_U_dict[beta][q] - np.average(E_given_U_dict[beta][q]))**2))
 
 file = open("sbm_data.pkl", "wb")
 pickle.dump((data), file)

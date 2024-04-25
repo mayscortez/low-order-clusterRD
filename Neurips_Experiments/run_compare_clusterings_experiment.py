@@ -12,9 +12,9 @@ def estimate_two_stage(fY,Cl,n,p,q,r,beta):
 
     tte_hat = []
     e_tte_hat_given_u = []
-    for _ in range(r//1000):
-        Z,U = staggered_rollout_two_stage(n,Cl,p/q,Q,1000) 
-        tte_hat = np.append(tte_hat,pi_estimate_tte_two_stage(fY(Z),p/q,Q))
+    for _ in range(r//100):
+        Z,U = staggered_rollout_two_stage(n,Cl,p,Q,100) 
+        tte_hat = np.append(tte_hat,pi_estimate_tte_two_stage(fY(Z),p,Q))
         e_tte_hat_given_u = np.append(e_tte_hat_given_u, q/(n*p)*np.sum(fY(U) - fY(np.zeros(n)),axis=1))
 
     return (q, tte_hat, e_tte_hat_given_u)
@@ -69,7 +69,7 @@ def run_experiment(G,Cls,fixed,varied,r):
 
         for nc,p in product(ncs,ps):
             for label,Cl in cluster_dict[nc].items():
-                for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=10)(delayed(lambda q : estimate_two_stage(fY,Cl,n,p,q,r,beta))(q) for q in np.linspace(p,1,24)):
+                for (q,TTE_hat,E_given_U) in Parallel(n_jobs=-1, verbose=10)(delayed(lambda q : estimate_two_stage(fY,Cl,n,p,q,r,beta))(q) for q in np.linspace(p,1,16)):
                     data["q"].append(q)
                     data["clustering"].append(label)
                     if "beta" in varied: data["beta"].append(beta)

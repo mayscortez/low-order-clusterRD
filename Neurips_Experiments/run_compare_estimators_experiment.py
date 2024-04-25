@@ -19,28 +19,30 @@ def estimate_two_stage(fY,G,Cl,n,p,q,r,beta,gamma):
                "dmt_bernoulli":[],
                "ht_cluster":[],
                "ht_bernoulli":[],
-               #"hajek_cluster":[],
-               #"hajek_bernoulli":[]
+               "hajek_cluster":[],
+               "hajek_bernoulli":[]
                }
    
     for _ in range(r//1000):
-        Zc,_ = staggered_rollout_two_stage(n,Cl,p/q,Q,1000) 
+        Zc,_ = staggered_rollout_two_stage(n,Cl,p,Q,1000) 
         Yc = fY(Zc)
 
-        tte_hat["pi_cluster"] = np.append(tte_hat["pi_cluster"],pi_estimate_tte_two_stage(Yc,p/q,Q))
+        tte_hat["pi_cluster"] = np.append(tte_hat["pi_cluster"],pi_estimate_tte_two_stage(Yc,p,Q))
         tte_hat["dm_cluster"] = np.append(tte_hat["dm_cluster"],dm_estimate_tte(Zc[1:,:,:],Yc[1:,:,:]))
         tte_hat["dmt_cluster"] = np.append(tte_hat["dmt_cluster"],dm_threshold_estimate_tte(Zc[1:,:,:],Yc[1:,:,:],G,gamma))
-        tte_hat["ht_cluster"] = np.append(tte_hat["ht_cluster"],ht_estimate_tte(Zc[1:,:,:],Yc[1:,:,:],G,Cl,p,Q[1:]))
-        #tte_hat["hajek_cluster"] = np.append(tte_hat["hajek_cluster"],hajek_estimate_tte(Zc[1:,:,:],Yc[1:,:,:],G,Cl,p,Q[1:]))
+        (ht_estimate,hajek_estimate) = ht_hajek_estimate_tte(Zc[-1,:,:],Yc[-1,:,:],G,Cl,p,Q[-1])
+        tte_hat["ht_cluster"] = np.append(tte_hat["ht_cluster"],ht_estimate)
+        tte_hat["hajek_cluster"] = np.append(tte_hat["hajek_cluster"],hajek_estimate)
 
-        Zb,_ = staggered_rollout_two_stage(n,Clb,1,P,1000)
+        Zb,_ = staggered_rollout_two_stage(n,Clb,p,P,1000)
         Yb = fY(Zb)
 
-        tte_hat["pi_bernoulli"] = np.append(tte_hat["pi_bernoulli"],pi_estimate_tte_two_stage(Yb,1,P))
+        tte_hat["pi_bernoulli"] = np.append(tte_hat["pi_bernoulli"],pi_estimate_tte_two_stage(Yb,p,P))
         tte_hat["dm_bernoulli"] = np.append(tte_hat["dm_bernoulli"],dm_estimate_tte(Zb,Yb))
         tte_hat["dmt_bernoulli"] = np.append(tte_hat["dmt_bernoulli"],dm_threshold_estimate_tte(Zb,Yb,G,gamma))
-        tte_hat["ht_bernoulli"] = np.append(tte_hat["ht_bernoulli"],ht_estimate_tte(Zb[1:,:,:],Yb[1:,:,:],G,Clb,p,P[1:]))
-        #tte_hat["hajek_bernoulli"] = np.append(tte_hat["hajek_bernoulli"],hajek_estimate_tte(Zb[1:,:,:],Yb[1:,:,:],G,Clb,p,P[1:]))
+        (ht_estimate,hajek_estimate) = ht_hajek_estimate_tte(Zb[-1,:,:],Yb[-1,:,:],G,Clb,p,P[-1])
+        tte_hat["ht_bernoulli"] = np.append(tte_hat["ht_bernoulli"],ht_estimate)
+        tte_hat["hajek_bernoulli"] = np.append(tte_hat["hajek_bernoulli"],hajek_estimate)
 
     return (p, tte_hat)
 
@@ -64,10 +66,10 @@ def run_experiment(G,Cls,fixed,varied,r,gamma):
         for nc,q in product(ncs,qs):
             for (p,results) in Parallel(n_jobs=-1, verbose=10)(delayed(lambda p : estimate_two_stage(fY,G,Cls[nc],n,p,max(q,p),r,beta,gamma))(p) for p in np.linspace(0.1,0.5,24)):
 
-                data["p"] += [p]*8
-                if "beta" in varied: data["beta"] += [beta]*8
-                if "nc" in varied: data["nc"] += [nc]*8
-                if "q" in varied: data["q"] += [q]*8
+                data["p"] += [p]*len(results)
+                if "beta" in varied: data["beta"] += [beta]*len(results)
+                if "nc" in varied: data["nc"] += [nc]*len(results)
+                if "q" in varied: data["q"] += [q]*len(results)
 
                 for label,TTE_hat in results.items():
                     est,treatment = label.split("_")

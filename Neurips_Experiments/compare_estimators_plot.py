@@ -7,7 +7,6 @@ import matplotlib.pyplot as plt
 def plot(ax,df,color,est):
     ax.plot(df['p'], df['bias'], color=color, label=est)
     ax.fill_between(df['p'], df['bias']-df['sd'], df['bias']+df['sd'], color=color, alpha=0.2)
-    ax.fill_between(df['p'], df['bias']-df['sd'], df['bias']+df['sd'], color=color, alpha=0.2)
 
 def draw_plots(data, col_var, row_var, outfile):
     df = pd.DataFrame(data)
@@ -33,12 +32,12 @@ def draw_plots(data, col_var, row_var, outfile):
 
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
     plt.setp(ax,xlim=(min(df['p']),max(df['p'])))
-    plt.setp(ax,ylim=(-1.5,1))
+    plt.setp(ax,ylim=(-2,1.5))
 
     ests = df["est"].unique()
 
     for e,est in enumerate(ests):
-        if est == "ht" or est == "hajek": continue
+        #if est == "hajek": continue
 
         if ncol == 1:
             plot(ax,df[df["est"] == est],colors[e],est)
