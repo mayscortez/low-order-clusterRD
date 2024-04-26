@@ -23,7 +23,7 @@ G = sbm(n,k,pii,pij)
 betas = [1,2,3]           # model degree
 p = 0.2                   # treatment budget
 qs = np.linspace(p,1,24)
-r = 5000                  # number of replications
+r = 10000                 # number of replications
 
 ##############################################
 

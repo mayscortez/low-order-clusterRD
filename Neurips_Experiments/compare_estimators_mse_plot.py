@@ -5,13 +5,14 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 def plot(ax,df,color,est):
-    ax.plot(df['p'], df['bias'], color=color, label=est)
-    if est != "ht":
-        ax.fill_between(df['p'], df['bias']-df['sd'], df['bias']+df['sd'], color=color, alpha=0.2)
+    ax.plot(df['p'], df['mse'], color=color, label=est)
+    # if est != "ht":
+    #     ax.fill_between(df['p'], df['bias']-df['sd'], df['bias']+df['sd'], color=color, alpha=0.2)
 
 def draw_plots(data, col_var, row_var, outfile):
     df = pd.DataFrame(data)
-    df['sd'] = (df['var'])**(1/2)
+
+    df['mse'] = df['bias']**2 + df['var']
 
     sns.set_theme()
 
@@ -33,12 +34,12 @@ def draw_plots(data, col_var, row_var, outfile):
 
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
     plt.setp(ax,xlim=(min(df['p']),max(df['p'])))
-    plt.setp(ax,ylim=(-10,10))
+    plt.setp(ax,ylim=(-0.02,0.85))
 
     ests = df["est"].unique()
 
     for e,est in enumerate(ests):
-        #if est == "ht": continue
+        if est == "ht": continue
 
         if ncol == 1:
             plot(ax,df[df["est"] == est],colors[e],est)

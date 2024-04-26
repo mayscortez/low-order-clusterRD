@@ -3,7 +3,7 @@ from numpy.random import RandomState
 from scipy.special import binom
 import scipy
 
-rng = RandomState(1785931)
+rng = RandomState(19025)
 
 ######## Constructed Networks ########
 
@@ -224,8 +224,8 @@ def pi_estimate_tte_two_stage(Y,p,Q):
 def dm_estimate_tte(Z,Y):
     '''
     Returns TTE estimate from difference in means
-        Z = treatment assignments: (beta+1) x r x n
-        Y = potential outcomes: (beta+1) x r x n
+        Z = treatment assignments: r x n
+        Y = potential outcomes: r x n
     '''
     T,_,n = Z.shape
 
@@ -233,7 +233,7 @@ def dm_estimate_tte(Z,Y):
 
     DM_data = np.sum(Y*Z,axis=2)/np.maximum(num_treated,1)          # (beta+1) x r
     DM_data -= np.sum(Y*(1-Z),axis=2)/np.maximum(n-num_treated,1)  
-    return np.sum(DM_data[1:,:],axis=0)/T
+    return np.sum(DM_data,axis=0)/T
 
 
 def dm_threshold_estimate_tte(Z,Y,G,gamma):
@@ -262,7 +262,7 @@ def dm_threshold_estimate_tte(Z,Y,G,gamma):
 
     DM_data = np.sum(Y*sufficiently_treated,axis=2)/np.maximum(num_sufficiently_treated,1)          # (beta+1) x r
     DM_data -= np.sum(Y*sufficiently_control,axis=2)/np.maximum(num_sufficiently_control,1)  
-    return np.sum(DM_data[1:,:],axis=0)/T
+    return np.sum(DM_data,axis=0)/T
 
 def _neighborhood_cluster_sizes(N,Cl):
     '''
@@ -314,11 +314,14 @@ def ht_hajek_estimate_tte(Z,Y,G,Cl,p,q):
     prob_fully_treated = np.power(p/q,cd) * np.power(q,d)
     prob_fully_control = np.prod(1 - p/q*(1-np.power(1-q,ncs)),axis=1)
 
-    nhat = np.sum(Ni_fully_treated/prob_fully_treated, axis=1)
+    HT_data = (np.sum(Y * Ni_fully_treated/prob_fully_treated, axis=1) - np.sum(Y * Ni_fully_control/prob_fully_control, axis=1))/n
 
-    HT_data = np.sum(Y * Ni_fully_treated/prob_fully_treated, axis=1)
-    HT_data -= np.sum(Y * Ni_fully_control/prob_fully_control, axis=1)   
-    return (HT_data/n,HT_data/nhat)
+    nhat1 = np.sum(Ni_fully_treated/prob_fully_treated, axis=1)
+    nhat2 = np.sum(Ni_fully_control/prob_fully_control, axis=1)
+
+    Hajek_data = np.sum(Y * Ni_fully_treated/prob_fully_treated, axis=1)/nhat1
+    Hajek_data -= np.sum(Y * Ni_fully_control/prob_fully_control, axis=1)/nhat2  
+    return (HT_data,Hajek_data)
 
 ######## Utility Function for Computing Effect Sizes ########
 

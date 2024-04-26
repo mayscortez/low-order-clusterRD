@@ -1,14 +1,14 @@
 { 
     "name" : "compare_estimators", 
-    "network" : "Email",
+    "network" : "BlogCatalog",
     "input" : "Network/data.pkl",
     "vary" : {
         "beta" : [1,2]
     },
     "fix" : {
-        "nc" : 42,
+        "nc" : 50,
         "q" : 0.5
     },
-    "replications" : 10000,
+    "replications" : 5000,
     "gamma" : 0.25
 }

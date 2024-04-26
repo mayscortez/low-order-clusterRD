@@ -38,8 +38,8 @@ def estimate_two_stage(fY,G,Cl,n,p,q,r,beta,gamma):
         Yb = fY(Zb)
 
         tte_hat["pi_bernoulli"] = np.append(tte_hat["pi_bernoulli"],pi_estimate_tte_two_stage(Yb,p,P))
-        tte_hat["dm_bernoulli"] = np.append(tte_hat["dm_bernoulli"],dm_estimate_tte(Zb,Yb))
-        tte_hat["dmt_bernoulli"] = np.append(tte_hat["dmt_bernoulli"],dm_threshold_estimate_tte(Zb,Yb,G,gamma))
+        tte_hat["dm_bernoulli"] = np.append(tte_hat["dm_bernoulli"],dm_estimate_tte(Zb[1:,:,:],Yb[1:,:,:]))
+        tte_hat["dmt_bernoulli"] = np.append(tte_hat["dmt_bernoulli"],dm_threshold_estimate_tte(Zb[1:,:,:],Yb[1:,:,:],G,gamma))
         (ht_estimate,hajek_estimate) = ht_hajek_estimate_tte(Zb[-1,:,:],Yb[-1,:,:],G,Clb,p,P[-1])
         tte_hat["ht_bernoulli"] = np.append(tte_hat["ht_bernoulli"],ht_estimate)
         tte_hat["hajek_bernoulli"] = np.append(tte_hat["hajek_bernoulli"],hajek_estimate)
@@ -64,7 +64,7 @@ def run_experiment(G,Cls,fixed,varied,r,gamma):
         TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n
 
         for nc,q in product(ncs,qs):
-            for (p,results) in Parallel(n_jobs=-1, verbose=10)(delayed(lambda p : estimate_two_stage(fY,G,Cls[nc],n,p,max(q,p),r,beta,gamma))(p) for p in np.linspace(0.1,0.5,24)):
+            for (p,results) in Parallel(n_jobs=-1, verbose=10)(delayed(lambda p : estimate_two_stage(fY,G,Cls[nc],n,p,max(q,p),r,beta,gamma))(p) for p in np.linspace(0.1,0.5,16)): #24
 
                 data["p"] += [p]*len(results)
                 if "beta" in varied: data["beta"] += [beta]*len(results)
@@ -76,8 +76,8 @@ def run_experiment(G,Cls,fixed,varied,r,gamma):
                     data["treatment"].append(treatment)
                     data["est"].append(est)
 
-                    mean = np.average(TTE_hat)
-                    variance = np.average((TTE_hat - mean)**2)
+                    mean = np.nanmean(TTE_hat)
+                    variance = np.nanmean((TTE_hat - mean)**2)
 
                     data["bias"].append(mean - TTE)
                     data["var"].append(variance)
