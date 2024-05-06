@@ -1,37 +1,54 @@
 import networkx as nx
 import matplotlib.pyplot as plt
+import seaborn as sns
+import numpy as np
 import pickle
 
+
+sns.set_theme()
 
 print("Loading Graph")
 
 file = open("data.pkl", "rb")
-G,communities,_ = pickle.load(file)
+G,Cls = pickle.load(file)
 n = G.shape[0]
+Cl = Cls[42]
 
-G = nx.to_networkx_graph(G)
-G.remove_edges_from(nx.selfloop_edges(G))
+d = np.sum(G,axis=1)
+l = np.array([len(c) for c in Cl])
+print(l)
 
-print("Drawing")
+i = 20  # large 14 4 21
 
-colors = ["tab:blue","tab:orange","tab:green","tab:red","tab:purple","tab:brown","tab:pink","tab:gray","tab:olive","tab:cyan"]*5
+G = G.todense()
+H = G[:,Cl[i]]
 
-# Compute positions for the node clusters as if they were themselves nodes in a
-# supergraph using a larger scale factor
-supergraph = nx.cycle_graph(len(communities))
-superpos = nx.spring_layout(supergraph, scale=30)#, seed=429)
-#superpos = nx.circular_layout(supergraph, scale=20)
+labels = []
+for j in Cl[i]:
+    labels.append(int(d[j] - np.sum(H[j,:])))
 
-# Use the "supernode" positions as the center of each node cluster
-centers = list(superpos.values())
-pos = {}
-for center, comm in zip(centers, communities):
-    pos.update(nx.spring_layout(nx.subgraph(G, comm), center=center))
+H = H[Cl[i],:]
+m = H.shape[0]
+H = H - np.eye(m)
 
-# Nodes colored by cluster
-for i,nodes in enumerate(communities):
-    nx.draw_networkx_nodes(G, pos=pos, nodelist=nodes, node_color=colors[i], node_size=5)
-nx.draw_networkx_edges(G, pos=pos)
-
-plt.tight_layout()
+Gr = nx.to_networkx_graph(H)
+#isolates = list(nx.isolates(Gr))
+labels = {i:l for (i,l) in enumerate(labels)}# if i not in isolates}
+#Gr.remove_nodes_from(isolates)
+#nx.spring_layout(Gr)
+#fruchterman_reingold_layout(Gr)
+nx.draw(Gr, pos=nx.spring_layout(Gr), node_color='r', node_size=240, with_labels=True, labels=labels)
 plt.show()
+
+# d = np.sum(G,axis=1)
+# print(np.min(d))
+# print(np.max(d))
+# print(np.average(d))
+
+# plt.hist(b,bins=range(0,250,2))
+# plt.xlabel("In-Degree")
+# plt.ylabel("Frequency")
+# plt.subplots_adjust(bottom=0.25)
+# plt.show()
+
+exit()

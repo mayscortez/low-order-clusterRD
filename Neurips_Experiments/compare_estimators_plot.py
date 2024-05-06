@@ -11,6 +11,7 @@ def plot(ax,df,color,est):
 
 def draw_plots(data, col_var, row_var, outfile):
     df = pd.DataFrame(data)
+    df = df[df["beta"] == 2]          ##################
     df['sd'] = (df['var'])**(1/2)
 
     sns.set_theme()
@@ -33,7 +34,7 @@ def draw_plots(data, col_var, row_var, outfile):
 
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
     plt.setp(ax,xlim=(min(df['p']),max(df['p'])))
-    plt.setp(ax,ylim=(-10,10))
+    plt.setp(ax,ylim=(-2,2))
 
     ests = df["est"].unique()
 

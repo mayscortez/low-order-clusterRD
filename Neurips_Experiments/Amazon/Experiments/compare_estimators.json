@@ -1,5 +1,5 @@
 { 
-    "name" : "compare_estimators2", 
+    "name" : "compare_estimators_one", 
     "network" : "Amazon",
     "input" : "Network/data.pkl",
     "vary" : {

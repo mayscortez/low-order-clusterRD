@@ -37,7 +37,7 @@ def plot(data, col_var, row_var, outfile):
         ax.fill_between(df['q'], df['bias']**2, df['bias']**2 + df['var_s'], color=colors[1], alpha=0.15)
         ax.plot(df['q'], df['bias']**2 + df['var_s'], color=colors[1],alpha=0.5)
         ax.fill_between(df['q'], df['bias']**2 + df['var_s'], df['bias']**2 + df['var'], color=colors[2], alpha=0.15)
-        ax.plot(df['q'], df['bias']**2 + df['var'], color=colors[2],alpha=0.5)
+        ax.plot(df['q'], df['bias']**2 + df['var'], color='k', linewidth=2)
     else:    
         for j in range(ncol):
             if nrow == 1:
@@ -48,7 +48,7 @@ def plot(data, col_var, row_var, outfile):
                 ax[j].fill_between(cell_df['q'], cell_df['bias']**2, cell_df['bias']**2 + cell_df['var_s'], color=colors[1], alpha=0.15)
                 ax[j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], color=colors[1],alpha=0.5)
                 ax[j].fill_between(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], cell_df['bias']**2 + cell_df['var'], color=colors[2], alpha=0.15)
-                ax[j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var'], color=colors[2],alpha=0.5)
+                ax[j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var'], color='k', linewidth=2)
             else:
                 ax[0,j].set_title("{}={}".format(col_var,cols[j]))
                 for i in range(nrow):
@@ -58,7 +58,7 @@ def plot(data, col_var, row_var, outfile):
                     ax[i,j].fill_between(cell_df['q'], cell_df['bias']**2, cell_df['bias']**2 + cell_df['var_s'], color=colors[1], alpha=0.15)
                     ax[i,j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], color=colors[1],alpha=0.5)
                     ax[i,j].fill_between(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], cell_df['bias']**2 + cell_df['var'], color=colors[2], alpha=0.15)
-                    ax[i,j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var'], color=colors[2],alpha=0.5)
+                    ax[i,j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var'], color='k', linewidth=2)
     
     if nrow != 1:
         for i in range(nrow):
