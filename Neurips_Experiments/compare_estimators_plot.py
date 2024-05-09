@@ -1,62 +1,102 @@
 import pickle
 import argparse
 import pandas as pd
-import seaborn as sns
 import matplotlib.pyplot as plt
 
-def plot(ax,df,color,est):
-    ax.plot(df['p'], df['bias'], color=color, label=est)
-    if est != "ht":
-        ax.fill_between(df['p'], df['bias']-df['sd'], df['bias']+df['sd'], color=color, alpha=0.2)
-
-def draw_plots(data, col_var, row_var, outfile):
-    df = pd.DataFrame(data)
-    df = df[df["beta"] == 2]          ##################
-    df['sd'] = (df['var'])**(1/2)
-
-    sns.set_theme()
-
-    if row_var != None:
-        rows = df[row_var].unique()
-        nrow = len(rows)
-    else: 
-        nrow = 1
-
-    if col_var != None:
-        cols = df[col_var].unique()
-        ncol = len(cols)
+def plot(ax,df,mse,**kwargs):
+    if mse:
+        ax.plot(df['p'], df['mse'],**kwargs)
     else:
-        ncol = 1
+        ax.plot(df['p'], df['bias'],**kwargs)
 
-    colors = ["tab:blue","tab:orange","tab:green","tab:red","tab:purple"]
+        kwargs["label"]=None
+        if "marker" in kwargs: kwargs.pop("marker")
+        if "markersize" in kwargs: kwargs.pop("markersize")
+        if "linestyle" in kwargs: kwargs.pop("linestyle")
+        ax.fill_between(df['p'], df['bias']-df['sd'], df['bias']+df['sd'],alpha=0.2, **kwargs)
 
-    sns.set_theme()
+def draw_plots(data,outfile,mse):
+    df = pd.DataFrame(data)
+    df['sd'] = (df['var'])**(1/2)
+    df['mse'] = df['mse'] = df['bias']**2 + df['var']
 
-    f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
+    df = df[(df['treatment']=='cluster') | (df['est'] == 'pi')]
+    df = df[(df['est']!='ht')]
+    df['est'] = df.apply( lambda row: row['est'] if row['treatment']=='cluster' else 'pi1', axis=1)
+
+    colors = ["tab:blue","tab:purple","tab:orange","tab:red","tab:green"]
+
+    est_kws = {
+        'pi' : {
+            'label': '2-Stage',
+            'color': colors[0],
+            'marker': 'o',
+            'markersize': 4
+        },
+        'pi1' : {
+            'label': 'PI',
+            'color': colors[1],
+            'linestyle': '--'
+        },
+        'dm' : {
+            'label': 'DM',
+            'color': colors[2],
+            'marker': 'x',
+            'markersize': 6
+        },
+        'dmt' : {
+            'label': 'DM(0.75)',
+            'color': colors[3],
+            'linestyle': '-.'
+        },
+        'hajek' : {
+            'label': 'Hájek',
+            'color': colors[4],
+            'linestyle': 'dotted'
+        }
+    }
+
+    #marks = ['D','*','s','x','o']
+
+    betas = [1,2]
+
+    f,ax = plt.subplots(1,len(betas))
+
     plt.setp(ax,xlim=(min(df['p']),max(df['p'])))
-    plt.setp(ax,ylim=(-2,2))
+
+    # Amazon
+    # if mse:
+    #     plt.setp(ax,ylim=(0,0.5))
+    # else:
+    #     plt.setp(ax,ylim=(-0.8,0.6))
+
+    # Email
+    # if mse:
+    #     plt.setp(ax,ylim=(0,12))
+    # else:
+    #     plt.setp(ax,ylim=(-5,3))
+
+    # BlogCatalog
+    if mse:
+        plt.setp(ax,ylim=(0,9))
+    else:
+        plt.setp(ax,ylim=(-4,2))
+    
+    
+    for a in ax:
+        a.set_xlabel('p',fontsize=14)
+        a.set_ylabel('MSE' if mse else 'Bias', fontsize=14)
 
     ests = df["est"].unique()
 
-    for e,est in enumerate(ests):
-        #if est == "ht": continue
+    for est in ests:
+        if est == 'hajek': continue
+        for j,beta in enumerate(betas):
+            ax[j].set_title(f"$\\beta={beta}$", fontsize=16)
+            plot(ax[j],df[(df["est"] == est) & (df["beta"] == beta)],mse,**est_kws[est])
 
-        if ncol == 1:
-            plot(ax,df[df["est"] == est],colors[e],est)
-        else:    
-            for j in range(ncol):
-                if nrow == 1:
-                    plot(ax[j],df[(df["est"] == est) & (df[col_var] == cols[j])],colors[e],est)
-                else:
-                    ax[0,j].set_title("{}={}".format(col_var,cols[j]))
-                    for i in range(nrow):
-                        plot(ax[i,j],df[(df["est"] == est) & (df[row_var] == rows[i]) & (df[col_var] == cols[j])],colors[e],est)
-    
-    if nrow != 1:
-        for i in range(nrow):
-            ax[i,0].set_ylabel("{}={}".format(row_var,rows[i]))
-
-    plt.legend()
+    ax[0].legend(ncol=2,prop={'size': 12})
+    f.subplots_adjust(bottom=0.25)
     plt.show()
     f.savefig(outfile)
 
@@ -64,14 +104,13 @@ def draw_plots(data, col_var, row_var, outfile):
 if __name__ == '__main__':
     p = argparse.ArgumentParser()
     p.add_argument('infile')
-    p.add_argument('outfile', default="bias_var_plot.png")
-    p.add_argument('-r','--row')
-    p.add_argument('-c','--col')
+    p.add_argument('outfile', default="compare_estimators_plot.png")
+    p.add_argument('-m','--mse',action='store_true')
     args = p.parse_args()
 
     data_file = open(args.infile, 'rb')
     data = pickle.load(data_file)
     data_file.close()
 
-    draw_plots(data, args.col, args.row, args.outfile)
+    draw_plots(data,args.outfile,args.mse)
     

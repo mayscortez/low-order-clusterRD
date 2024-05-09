@@ -12,7 +12,7 @@ file = open("products.pkl", "rb")
 products = pickle.load(file)
 
 n = len(products)
-print("Found {} DVDs".format(n))
+print("Found {} DVDs".format(n))x
 
 print("Assigning sequential ids to products")
 
