@@ -13,9 +13,6 @@ df = df[df['nc'] == 500]
 
 df['mse'] = df['bias']**2 + df['var']
 
-print(df.to_string())
-exit()
-
 colors = ["tab:blue","tab:orange","tab:green"]
 
 f,ax = plt.subplots(1,3, sharex=True, sharey=True)
@@ -52,4 +49,4 @@ for axis in ax:
 f.subplots_adjust(bottom=0.25)
 ax[0].legend(prop={'size': 12})
 plt.show()
-f.savefig("mse_sbm_plot.png",bbox_inches='tight')
+f.savefig("compare_clusterings_plot.png",bbox_inches='tight')

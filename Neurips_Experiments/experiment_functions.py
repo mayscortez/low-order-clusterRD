@@ -101,65 +101,6 @@ def pom_ugander_yin(G,h,beta):
 
     return lambda Z : _outcomes(Z,G,C,d,beta,delta)
 
-def _outcomes_market(Z,G,S,baseline,gamma,delta,d,beta):
-    '''
-    Returns a matrix of outcomes for the given tensor of treatment assignments
-        Z = treatment assignments: (beta+1) x r x n
-        G = adjacency list representation of graph, indicates complements
-        S = adjacency list representation of graph of substitutes
-        C = Ugander Yin coefficients: (beta+1) x n
-        d = vector of vertex degrees: n 
-        beta = model degree
-        delta = magnitide of direct
-    '''
-    if Z.ndim == 1:
-        NC = Z @ G   # number of treated complementary products
-        NS = Z @ S   # number of treated substitute products
-    else:
-        NC = np.empty_like(Z)
-        NS = np.empty_like(Z)
-
-        for i in range(Z.shape[0]):
-            NC[i] = Z[i] @ G
-            NS[i] = Z[i] @ S
-
-    Y = 1 + delta * Z
-
-    for k in range(1,beta+1):
-        for a in range(k+1):
-            Y -= (-gamma)**k * (2*a-k) * (binom(NC,a) * binom(NS,k-a)) / np.where(d>k,binom(d,k),1) 
-
-    return Y * baseline
-
-def pom_market(G,h,beta):
-    '''
-    Returns vectors of coefficients c_i,S for each individual i and neighborhood subset S 
-    Coefficients are given by a modification of Ugander/Yin's model to incorporate varied treatment effects across individuals and higher-order neighbor effects
-        G = adjacency list representation of graph
-        d = vector of vertex degrees
-        h = vector of homophily effects
-        beta = model degree
-    '''
-
-    # parameters 
-    a = 1                      # baseline effect
-    b = 0.5                    # magnitude of homophily effects on baselines
-    sigma = 0.1                # magnitude of random perturbation on baselines
-    delta = 0.5                # magnitude of direct effect
-    gamma = 1                  # magnitude of subset treatment effects
-
-    n = G.shape[0]
-    d = np.ones(n) @ G         # vertex (complement) degrees
-    dbar = np.sum(d)/n
-    
-    baseline = ( a + b * h + rng.normal(scale=sigma, size=n) ) * d/dbar
-
-    S = ((G @ G).sign() - G).astype(np.uint8)
-    dp = np.ones(n) @ (S+G)        # degree of 2-neighborhood
-
-    return lambda Z : _outcomes_market(Z,G,S,baseline,gamma,delta,dp,beta)
-
-
 ######## Treatment Assignments ########
 
 def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
@@ -186,6 +127,24 @@ def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
         Z[t,:,:] = (U < Q[t]) + 0
 
     return (Z * selection_mask, selection_mask)
+
+def staggered_rollout_two_stage_unit(n,p,Q,r=1):
+    '''
+        Returns treatment samples from Bernoulli staggered rollout: (beta+1) x r x n
+        n = number of individuals
+        p = treatment budget
+        Q = treatment probabilities of selected units for each time step: beta+1
+        r = number of replications
+    '''
+
+    Z = np.zeros((len(Q),r,n))
+    V = rng.rand(r,n)     # random values that determine when individual i starts being treated
+    U = (V < p/Q[-1]) + 0
+
+    for t in range(len(Q)):
+        Z[t,:,:] = (V < Q[t]*p/Q[-1]) + 0
+
+    return (Z,U)
 
 ######## Estimator ########
 
@@ -217,6 +176,19 @@ def pi_estimate_tte_two_stage(Y,p,Q):
     H = _interp_coefficients(Q)
     
     return 1/(n*p/Q[-1]) * H @ np.sum(Y,axis=-1)
+
+def two_stage_restricted_estimator(Y,U,p,Q):
+    '''
+    Returns TTE estimate from polynomial interpolation
+        Y = potential outcomes: (beta+1) x r x n
+        U = selected individuals: r x n
+        p = treatment budget
+        Q = treatment probabilities of selected units for each time step: beta+1
+    '''
+    n = Y.shape[-1]
+    H = _interp_coefficients(Q)
+    
+    return 1/(n*p/Q[-1]) * H @ np.sum(Y*U,axis=-1)
 
 
 ######## Other Estimators ########

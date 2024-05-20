@@ -29,7 +29,7 @@ def plot(data, col_var, row_var, outfile):
 
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
     plt.setp(ax, xlim=(min(df['q']),1))
-    plt.setp(ax, ylim=(0,1))
+    plt.setp(ax, ylim=(0,5))
 
     if ncol == 1:
         ax.fill_between(df['q'], 0, df['bias']**2, color=colors[0], alpha=0.15)
