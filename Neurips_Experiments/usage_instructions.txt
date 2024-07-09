@@ -1,0 +1,12 @@
+These instructions assume you already have the data.pkl files in the appropriate directories (Amazon/Netowork, etc).
+
+To run the file run_compare_estimators_experiment.py, in the terminal navigate to the Neurips_Experiments directory.
+Then type python3 run_compare_estimators_experiment.py <path to json file> where you specify the path to the json file for the network you are running the experiment on. For example, if this is for the Amazon network, you would pass Amazon/Experiments/compare_estimators.json, so the full command is:
+
+python3 run_compare_estimators_experiment.py Amazon/Experiments/compare_estimators.json
+
+This will save a compare_esimators.pkl file into the Amazon/Experiments folder.
+
+Then, to plot results, type python3 compare_estimators_plot.py <path to experiment pickle file> <file_name>.png. For example, 
+
+python3 compare_estimators_plot.py Amazon/Experiments/compare_estimators.pkl picture.png
