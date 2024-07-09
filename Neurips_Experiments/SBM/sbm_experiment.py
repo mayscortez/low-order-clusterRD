@@ -5,7 +5,7 @@ from experiment_functions import *
 from joblib import Parallel, delayed 
 import pickle
 
-print("Constructing Graph")
+#print("Constructing Graph")
 
 n = 1000
 k = 50
@@ -30,6 +30,7 @@ r = 10000                 # number of replications
 data = { "q":[], "beta":[], "bias":[], "var":[], "var_s":[]}
 
 def estimate_two_stage(fY,Cl,q,r,beta):
+    #print("q={}".format(q))
     Q = np.linspace(0, q, beta+1)
 
     tte_hat = []
@@ -44,9 +45,10 @@ TTE_hat_dict = { beta:{ q:[] for q in qs} for beta in betas}
 Bias_dict = { beta:{ q:[] for q in qs} for beta in betas}
 E_given_U_dict = { beta:{ q:[] for q in qs} for beta in betas}
 
-for _ in range(20):
+for idx in range(20):
     G = sbm(n,k,pii,pij)
     h = homophily_effects(G)
+    print("Graph trial: {}".format(idx))
 
     for beta in betas:
         fY = pom_ugander_yin(G,h,beta)
@@ -69,6 +71,7 @@ for beta in betas:
         # data["var"].append(np.average((TTE_hat_dict[beta][q] - np.average(TTE_hat_dict[beta][q]))**2))
         # data["var_s"].append(np.average((E_given_U_dict[beta][q] - np.average(E_given_U_dict[beta][q]))**2))
 
+print("Saving data file")
 file = open("sbm_data.pkl", "wb")
 pickle.dump((data), file)
 file.close()
