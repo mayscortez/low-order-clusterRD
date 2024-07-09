@@ -9,10 +9,17 @@ import matplotlib.pyplot as plt
 # vary p:               col = p               row = nc 
 
 def plot(data, col_var, row_var, outfile):
+    '''
+    data (dict): experiment data
+    col_var (str): 'nc', 'clustering', 'p' or None depending on the experiment
+    row_var (str): 'beta', 'nc', or None depending on the experiment
+    outfile (str): path to save plot to
+    '''
     df = pd.DataFrame(data)
 
     sns.set_theme()
 
+    # determine rows and columns of subplots
     if row_var != None:
         rows = df[row_var].unique()
         nrow = len(rows)
@@ -27,7 +34,7 @@ def plot(data, col_var, row_var, outfile):
 
     colors = ["tab:blue","tab:orange","tab:green"]
 
-    f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True)
+    f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True) #if nrow=1=ncol, just single plot; otherwise, grid of plots
     plt.setp(ax, xlim=(min(df['q']),1))
     plt.setp(ax, ylim=(0,5))
 
@@ -68,12 +75,12 @@ def plot(data, col_var, row_var, outfile):
     f.savefig(outfile)
 
 if __name__ == '__main__':
-    p = argparse.ArgumentParser()
-    p.add_argument('infile')
-    p.add_argument('outfile', default="bias_var_plot.png")
-    p.add_argument('-r','--row')
-    p.add_argument('-c','--col')
-    args = p.parse_args()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('infile',help="path to .pkl file that stores experiment data")
+    parser.add_argument('outfile', default="bias_var_plot.png", help="path to save the plot to")
+    parser.add_argument('-r','--row',help="basic MSE: row = beta\ncompare clustering: row = nc\nvary p: row = nc")
+    parser.add_argument('-c','--col',help="basic MSE: col = nc\ncompare clustering: col = clustering\nvary p: col = p")
+    args = parser.parse_args()
 
     data_file = open(args.infile, 'rb')
     data = pickle.load(data_file)
