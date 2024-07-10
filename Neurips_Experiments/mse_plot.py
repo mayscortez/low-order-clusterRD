@@ -7,13 +7,13 @@ import matplotlib.pyplot as plt
 # basic mse:            col = nc              row = beta
 # compare clustering:   col = clustering      row = nc
 # vary p:               col = p               row = nc 
-# compare estimators:   col = beta            row = clustering
+# compare estimators:   col = beta            row = cl
 
 def plot(data, col_var, row_var, outfile):
     '''
     data (dict): experiment data
-    col_var (str): 'nc', 'clustering', 'p' or None depending on the experiment
-    row_var (str): 'beta', 'nc', or None depending on the experiment
+    col_var (str): 'nc', 'clustering', 'p', or 'beta' or None depending on the experiment
+    row_var (str): 'beta', 'nc', or 'cl' or None depending on the experiment
     outfile (str): path to save plot to
     '''
     df = pd.DataFrame(data)

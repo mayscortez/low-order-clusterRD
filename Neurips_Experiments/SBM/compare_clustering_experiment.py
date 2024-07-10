@@ -27,7 +27,7 @@ r = 1000                  # number of replications
 
 ##############################################
 
-data = {"beta":[], "q":[], "clustering":[], "bias":[], "var":[], "var_s":[]}
+data = {"beta":[], "q":[], "cl":[], "bias":[], "var":[], "var_s":[]}
 
 def estimate_two_stage(fY,Cl,q,r,beta):
     Q = np.linspace(0, q, beta+1)
@@ -103,7 +103,7 @@ for beta in betas:
     for cl in ["none","graph","community","random","anti"]:
         for q in qs:
             data["q"].append(q)
-            data["clustering"].append(cl)
+            data["cl"].append(cl)
             data["beta"].append(beta)
             data["bias"].append(np.average(Bias_dict[beta][cl][q]))
             data["var"].append(np.average((TTE_hat_dict[beta][cl][q] - np.average(TTE_hat_dict[beta][cl][q]))**2))
