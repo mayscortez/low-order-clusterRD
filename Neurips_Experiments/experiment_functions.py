@@ -84,7 +84,13 @@ def pom_ugander_yin(G,h,beta):
     b = 0.5                                       # magnitude of homophily effects on baselines
     sigma = 0.1                                   # magnitude of random perturbation on baselines
     delta = 0.5                                   # magnitude of direct effect
-    gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
+    '''
+    if beta==2:
+        gamma = [0, 0, 2]   # magnitude of subset treatment effects
+    else:
+        gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
+    '''
+    gamma = [0.75**(k-1) for k in range(beta+1)] 
     tau = 0                                       # magnitude of random perturbation on treatment effects
 
     n = G.shape[0]
