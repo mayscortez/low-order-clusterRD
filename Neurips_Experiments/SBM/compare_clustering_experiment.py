@@ -5,7 +5,9 @@ from experiment_functions import *
 from joblib import Parallel, delayed 
 import pickle
 import pymetis
+import time
 
+startTime = time.time()
 n = 800
 k = 20      # number of communities
 c = n//k    # community size 
@@ -20,7 +22,7 @@ pii = e_indeg/(c-1)
 pij = e_outdeg/(n-c)
 
 # parameters
-betas = [1,2]             # model degrees
+betas = [1,2,3]             # model degrees
 p = 0.1                   # treatment budget
 qs = np.linspace(p,1,24)
 r = 1000                  # number of replications
@@ -112,6 +114,9 @@ for beta in betas:
 file = open("sbm_clustering.pkl", "wb")
 pickle.dump((data), file)
 file.close()
+
+executionTime = (time.time() - startTime)
+print('Total runtime in minutes: {}'.format(executionTime/60)) 
         
 
         
