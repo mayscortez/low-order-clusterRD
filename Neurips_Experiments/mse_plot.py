@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 # basic mse:            col = nc              row = beta
 # compare clustering:   col = clustering      row = nc
 # vary p:               col = p               row = nc 
+# compare estimators:   col = beta            row = clustering
 
 def plot(data, col_var, row_var, outfile):
     '''
@@ -36,7 +37,9 @@ def plot(data, col_var, row_var, outfile):
 
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True) #if nrow=1=ncol, just single plot; otherwise, grid of plots
     plt.setp(ax, xlim=(min(df['q']),1))
-    plt.setp(ax, ylim=(0,5))
+    plt.setp(ax, ylim=(0,4))
+    f.set_figheight(10)
+    f.set_figwidth(5)
 
     if ncol == 1:
         ax.fill_between(df['q'], 0, df['bias']**2, color=colors[0], alpha=0.15)
@@ -70,7 +73,7 @@ def plot(data, col_var, row_var, outfile):
     if nrow != 1:
         for i in range(nrow):
             ax[i,0].set_ylabel("{}={}".format(row_var,rows[i]))
-
+    plt.tight_layout()
     plt.show()
     f.savefig(outfile)
 
