@@ -39,7 +39,7 @@ def plot(data, col_var, row_var, outfile):
     plt.setp(ax, xlim=(min(df['q']),1))
     plt.setp(ax, ylim=(0,4))
     f.set_figheight(10)
-    f.set_figwidth(5)
+    f.set_figwidth(7)
 
     if ncol == 1:
         ax.fill_between(df['q'], 0, df['bias']**2, color=colors[0], alpha=0.15)
@@ -73,6 +73,8 @@ def plot(data, col_var, row_var, outfile):
     if nrow != 1:
         for i in range(nrow):
             ax[i,0].set_ylabel("{}={}".format(row_var,rows[i]))
+    f.supxlabel("effective treatment budget (q)")
+    #f.supylabel("clustering")
     plt.tight_layout()
     plt.show()
     f.savefig(outfile)
