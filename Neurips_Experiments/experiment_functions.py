@@ -112,21 +112,25 @@ def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
         Q = treatment probabilities of selected units for each time step: beta+1
         r = number of replications
     '''
-    k = len(Cl)
+    if len(Cl) == 0:
+        Z,U = staggered_rollout_two_stage_unit(n,p,Q,r)
+        return (Z,U)
+    else:
+        k = len(Cl)
 
-    T = np.zeros((k,n))
-    for (j,cl) in enumerate(Cl):
-        T[j,cl] = 1
+        T = np.zeros((k,n))
+        for (j,cl) in enumerate(Cl):
+            T[j,cl] = 1
 
-    selection_mask = ((rng.rand(r,k) < p/Q[-1]) + 0) @ T
+        selection_mask = ((rng.rand(r,k) < p/Q[-1]) + 0) @ T
 
-    Z = np.zeros((len(Q),r,n))
-    U = rng.rand(r,n)     # random values that determine when individual i starts being treated
+        Z = np.zeros((len(Q),r,n))
+        U = rng.rand(r,n)     # random values that determine when individual i starts being treated
 
-    for t in range(len(Q)):
-        Z[t,:,:] = (U < Q[t]) + 0
+        for t in range(len(Q)):
+            Z[t,:,:] = (U < Q[t]) + 0
 
-    return (Z * selection_mask, selection_mask)
+        return (Z * selection_mask, selection_mask)
 
 def staggered_rollout_two_stage_unit(n,p,Q,r=1):
     '''
