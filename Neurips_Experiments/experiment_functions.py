@@ -26,6 +26,18 @@ def sbm(n,k,pii,pij):
 
     return scipy.sparse.csr_matrix(A)
 
+def er(n,p_edge):
+    ''' 
+    Returns a graph sampled from an Erdos Renyi model
+        n = number of vertices
+        pii = edge probability
+    '''
+
+    A = (rng.rand(n,n) < p_edge) + 0
+    A[range(n),range(n)] = 1   # everyone is affected by their own treatment
+
+    return scipy.sparse.csr_matrix(A)
+
 ######## Potential Outcomes Model ########
 
 def homophily_effects(G):
@@ -108,7 +120,6 @@ def pom_ugander_yin(G,h,beta):
     return lambda Z : _outcomes(Z,G,C,d,beta,delta)
 
 ######## Treatment Assignments ########
-
 def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
     '''
         Returns treatment samples from Bernoulli staggered rollout: (beta+1) x r x n
@@ -199,6 +210,17 @@ def two_stage_restricted_estimator(Y,U,p,Q):
     H = _interp_coefficients(Q)
     
     return 1/(n*p/Q[-1]) * H @ np.sum(Y*U,axis=-1)
+
+def one_stage_pi(Y, probs):
+    '''
+    Staggered-rollout polynomial interpolation estimator 
+    Y: Tensor of potential outcomes - T x r x n
+    probs: Array of treatment probabilities at each time step - T
+    Returns: Array of TTE estimates in each replication - r
+    '''
+    H = _interp_coefficients(probs)
+
+    return H @ np.mean(Y,axis=2)
 
 
 ######## Other Estimators ########
