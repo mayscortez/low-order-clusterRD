@@ -12,7 +12,7 @@ startTime = time.time()
 betas = [2,3,4]             # model degrees
 p = 0.1                   # treatment budget
 q_values = [0.1, 0.5, 1]
-r = 100                  # number of rct replications
+r = 1000                  # number of rct replications
 graph_reps = 10          # number of graph replications
 n_values = np.linspace(500,5000,10,dtype=int)
 Cl = []
