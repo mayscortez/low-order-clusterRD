@@ -2,12 +2,13 @@ import numpy as np
 from numpy.random import RandomState
 from scipy.special import binom
 import scipy
+from itertools import chain, combinations
 
 rng = RandomState(19025)
 
 ######## Constructed Networks ########
 
-def sbm(n,k,pii,pij):
+def sbm(n,k,pii,pij,self_loops=True):
     ''' 
     Returns a graph sampled from a stochastic block model
         n = number of vertices
@@ -22,11 +23,12 @@ def sbm(n,k,pii,pij):
     for i in range(k):
         A[i*c:(i+1)*c,i*c:(i+1)*c] = (rng.rand(c,c) < pii) + 0
 
-    A[range(n),range(n)] = 1   # everyone is affected by their own treatment
+    if self_loops:
+        A[range(n),range(n)] = 1   # everyone is affected by their own treatment
 
     return scipy.sparse.csr_matrix(A)
 
-def er(n,p_edge):
+def er(n,p_edge,self_loops=True):
     ''' 
     Returns a graph sampled from an Erdos Renyi model
         n = number of vertices
@@ -34,7 +36,8 @@ def er(n,p_edge):
     '''
 
     A = (rng.rand(n,n) < p_edge) + 0
-    A[range(n),range(n)] = 1   # everyone is affected by their own treatment
+    if self_loops:
+        A[range(n),range(n)] = 1   # everyone is affected by their own treatment
 
     return scipy.sparse.csr_matrix(A)
 
@@ -118,6 +121,78 @@ def pom_ugander_yin(G,h,beta):
         C[k,:] = baseline * (gamma[k] + tau * rng.normal(size=n))
 
     return lambda Z : _outcomes(Z,G,C,d,beta,delta)
+
+def TTE(Y):
+    '''
+    Convenience function to compute the total treatment effect of a potential outcomes model
+    Y : potential outcomes function Y : {0,1}^n -> R^n
+    '''
+    return np.mean(Y(1) - Y(0))
+
+def _outcomes_dyadic(Z,alpha,deg1,deg2):
+    '''
+    Returns a matrix of outcomes for the given tensor of treatment assignments (should be same dimensions as Z)
+    From Deng, et al (2024)
+        Z (ndarr) = treatment assignments: (beta+1) x r x n
+        alpha (arr) = baseline effects: shape (n,)
+        deg1 (arr) = degree one (linear) effects: shape (n,n)
+        deg2 (arr) = degree 2 effects: shape (n,n)
+    '''
+    # convenience code for easy TTE computation
+    if type(Z) == int:
+        n = len(alpha)
+        if Z == 0: Z = np.zeros(n)
+        elif Z == 1: Z = np.ones(n)
+        else: raise Exception("Can't interpret {} as a treatment assignment".format(Z))
+        
+    Z_flat = Z.reshape(-1, Z.shape[-1]) # reshape Z to _ x n; if Z is (beta+1) x r x n, then this is 2d array with (beta+1)*r rows and n columns
+
+    linear_effect = Z_flat @ deg1 # matrix multiplication with (_ x n) times (n x n)
+    dyadic_effect = (Z_flat @ deg2) * Z_flat 
+
+    Y = alpha + linear_effect + dyadic_effect
+    return Y.reshape(Z.shape)
+
+def pom_dyadic(A,params={'dist':'uniform', 'direct': 1, 'indirect_deg1': 0.5, 'indirect_deg2': 0.5}):
+    '''
+    Returns the potential outcomes function from Deng, et al (2024)
+    Arguments
+        A (array):
+            interference graph adjacency matrix, shape (n,n) 
+        dist_dict (dict):
+            parameters for the chosen distribution
+            key: 'dist', value: 'uniform' or 'bernoulli'
+            key: 'direct', value: float (if bernoulli, should be between 0 and 1)
+            key: 'indirect_deg1', value: float (if bernoulli, should be between 0 and 1)
+            key: 'indirect_deg2', value: float (if bernoulli, should be between 0 and 1)
+    
+    Returns
+        alpha (array) = baseline effects: shape (n,)
+        deg1 (array) = degree one (linear) effects: shape (n,n)
+        deg2 (array) = degree 2 effects: shape (n,n)
+    '''
+    assert type(A) == np.ndarray, "Adjacency matrix A should be of type numpy.ndarray but is instead {}".format(type(A))
+    n = A.shape[0]
+    
+    if params['dist'] == "uniform":
+        alpha = np.sum(A, axis=0) - 1 # in-degrees for each node, exluding themself
+        direct_effects = rng.uniform(0,params['direct'],size=(n,))
+        deg1 = rng.uniform(0,params['indirect_deg1'],size=(n,n))
+        deg2 = rng.uniform(0,params['indirect_deg2'],size=(n,n))
+
+    else: # bernoulli
+        alpha = np.zeros(n)
+        direct_effects = (rng.rand(n) < params['direct']) + 0
+        deg1 = (rng.rand(n,n) < params['indirect_deg1']) + 0
+        deg2 = (rng.rand(n,n) < params['indirect_deg2']) + 0
+
+    deg1 = np.multiply(deg1, A) # if j is not a neighbor of i there is no degree 1 effect
+    np.fill_diagonal(deg1, direct_effects)
+
+    np.fill_diagonal(deg2, 0) # if i=j, there is no degree 2 effect
+    deg2 = np.multiply(deg2, A) # if j is not a neighbor of i there is no degree 2 effect
+      
+    return lambda Z : _outcomes_dyadic(Z,alpha,deg1,deg2)
 
 ######## Treatment Assignments ########
 def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
