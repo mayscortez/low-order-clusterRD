@@ -159,6 +159,7 @@ def pom_dyadic(A,params={'dist':'uniform', 'direct': 1, 'indirect_deg1': 0.5, 'i
     Arguments
         A (array):
             interference graph adjacency matrix, shape (n,n) 
+            (i,j)th entry tells you if there is an edge from i to j
         dist_dict (dict):
             parameters for the chosen distribution
             key: 'dist', value: 'uniform' or 'bernoulli'
@@ -168,7 +169,7 @@ def pom_dyadic(A,params={'dist':'uniform', 'direct': 1, 'indirect_deg1': 0.5, 'i
     
     Returns
         alpha (array) = baseline effects: shape (n,)
-        deg1 (array) = degree one (linear) effects: shape (n,n)
+        deg1 (array) = degree one (linear) effects, includes indirect and direct: shape (n,n)
         deg2 (array) = degree 2 effects: shape (n,n)
     '''
     assert type(A) == np.ndarray, "Adjacency matrix A should be of type numpy.ndarray but is instead {}".format(type(A))
@@ -176,17 +177,18 @@ def pom_dyadic(A,params={'dist':'uniform', 'direct': 1, 'indirect_deg1': 0.5, 'i
     
     if params['dist'] == "uniform":
         alpha = np.sum(A, axis=0) - 1 # in-degrees for each node, exluding themself
-        direct_effects = rng.uniform(0,params['direct'],size=(n,))
+        direct_effects = rng.uniform(0,params['direct'],size=(n,n))
         deg1 = rng.uniform(0,params['indirect_deg1'],size=(n,n))
         deg2 = rng.uniform(0,params['indirect_deg2'],size=(n,n))
 
     else: # bernoulli
         alpha = np.zeros(n)
-        direct_effects = (rng.rand(n) < params['direct']) + 0
+        direct_effects = (rng.rand(n,n) < params['direct']) + 0
         deg1 = (rng.rand(n,n) < params['indirect_deg1']) + 0
         deg2 = (rng.rand(n,n) < params['indirect_deg2']) + 0
 
     deg1 = np.multiply(deg1, A) # if j is not a neighbor of i there is no degree 1 effect
+    direct_effects = np.sum(np.multiply(direct_effects, A), axis=0)
     np.fill_diagonal(deg1, direct_effects)
 
     np.fill_diagonal(deg2, 0) # if i=j, there is no degree 2 effect
