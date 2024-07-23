@@ -3,7 +3,7 @@ import numpy as np
 import pickle
 import pandas as pd
 
-def plot_robustness(df, col_var, row_var, model, x_var, plot_type="bias", save_path=""):  
+def plot_robustness(df, col_var, row_var, x_var, plot_type="bias", save_path=""):  
     '''
     Plot the results from robustness_beta.py as a grid of plots
 
@@ -25,7 +25,7 @@ def plot_robustness(df, col_var, row_var, model, x_var, plot_type="bias", save_p
         plt.setp(ax, ylim=(0,np.median(df['bias']**2 + df['var'])))
     else:
         plt.setp(ax, ylim=(-3,3))
-    f.suptitle(model)
+    #f.suptitle(model)
     f.set_figheight(10)
     f.set_figwidth(10)
     f.supxlabel(x_var)
@@ -52,17 +52,16 @@ def plot_robustness(df, col_var, row_var, model, x_var, plot_type="bias", save_p
 
 
 if __name__ == '__main__':
-    file_name = 'sbm_robustness.pkl'
+    file_name = 'robustness.pkl'
     with open(file_name, 'rb') as file:
         data = pickle.load(file)
 
     df = pd.DataFrame(data)
-    model = "Ugander-Yin Model"
     plot_type = "bias"
     save_path = "robustness.png"
 
-    col_var = "beta"
+    col_var = "model"
     row_var = "q"
     x_var = "n"
     
-    plot_robustness(df, col_var, row_var, model, x_var, plot_type, save_path)
+    plot_robustness(df, col_var, row_var, x_var, plot_type, save_path)

@@ -10,11 +10,11 @@ import time
 startTime = time.time()
 
 # parameters
-models = ['dyadic','ugander-yin']
-betas = [2,2]  # true model degrees, should be same length as models and correspond to its entries
+models = ['dyadic','Ugander-Yin, deg2','Ugander-Yin, deg3']
+betas = [2,2,3]  # true model degrees, should be same length as models and correspond to its entries
 p = 0.1                   # treatment budget
-q_values = [0.5, 1]
-r = 100                  # number of rct replications
+q_values = [p, 0.5, 1]
+r = 10                  # number of rct replications
 graph_reps = 10          # number of graph replications
 n_values = np.linspace(500,5000,10,dtype=int)
 Cl = []
@@ -62,7 +62,7 @@ Bias_dict = {q: {m: {e: {n:[] for n in n_values} for e in estimator_list} for m 
 for q in q_values:
     print("\nq={}".format(q))
     for idx,model in enumerate(models):
-        print("\nmodel={}".format(model))
+        print("\nmodel={},deg={}".format(model,betas[idx]))
         beta = betas[idx]
         for g in range(graph_reps):
             if g%5==0:
