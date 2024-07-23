@@ -14,7 +14,7 @@ models = ['dyadic','Ugander-Yin, deg2','Ugander-Yin, deg3']
 betas = [2,2,3]  # true model degrees, should be same length as models and correspond to its entries
 p = 0.1                   # treatment budget
 q_values = [p, 0.5, 1]
-r = 10                  # number of rct replications
+r = 100                  # number of rct replications
 graph_reps = 10          # number of graph replications
 n_values = np.linspace(500,5000,10,dtype=int)
 Cl = []
