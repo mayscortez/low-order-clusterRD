@@ -174,9 +174,11 @@ def pom_dyadic(A,params={'dist':'uniform', 'direct': 1, 'indirect_deg1': 0.5, 'i
     '''
     assert type(A) == np.ndarray, "Adjacency matrix A should be of type numpy.ndarray but is instead {}".format(type(A))
     n = A.shape[0]
+
+    np.fill_diagonal(A, 0) # in this model, there are no self-loops
     
     if params['dist'] == "uniform":
-        alpha = np.sum(A, axis=0) - 1 # in-degrees for each node, exluding themself
+        alpha = np.sum(A, axis=0) # in-degrees for each node
         direct_effects = rng.uniform(0,params['direct'],size=(n,n))
         deg1 = rng.uniform(0,params['indirect_deg1'],size=(n,n))
         deg2 = rng.uniform(0,params['indirect_deg2'],size=(n,n))
