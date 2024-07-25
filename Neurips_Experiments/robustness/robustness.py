@@ -68,14 +68,12 @@ for q in q_values:
             if g%5==0:
                 print("Graph iteration: {}".format(g))
             for (TTE_true,n,TTE_hat_1stage,TTE_hat_2stage) in Parallel(n_jobs=-2, verbose=5)(delayed(lambda n : estimate([],n,r,beta,q,model))(n) for n in n_values):
-                #print("n: {}\nTTE_true: {}\nTTE_hat_1stage: {}\nTTE_hat_2stage:{}".format(n, TTE_true, TTE_hat_1stage,TTE_hat_2stage))
                 Bias_dict[q][model]["1-stage"][n].append(TTE_hat_1stage - TTE_true)
                 TTE_hat_dict[q][model]["1-stage"][n].append(TTE_hat_1stage)
 
                 Bias_dict[q][model]["2-stage"][n].append(TTE_hat_2stage - TTE_true)
                 TTE_hat_dict[q][model]["2-stage"][n].append(TTE_hat_2stage)
 
-# save the data (?)
 print("\nSaving the data...")
 for q in q_values:
     for model in models:
@@ -92,9 +90,7 @@ for q in q_values:
 
                 var = np.average((TTE_hat_dict[q][model][est][n] - np.average(TTE_hat_dict[q][model][est][n]))**2)
                 data["var"].append(var)
-                #print("bias: {}\nvar: {}\n".format(bias, var))
 
-#print("data: {}\n".format(data))
 file = open("robustness.pkl", "wb")
 pickle.dump((data), file)
 file.close()
