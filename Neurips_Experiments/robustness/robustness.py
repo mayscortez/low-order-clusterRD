@@ -51,11 +51,11 @@ def estimate(Cl,n,r,beta,q,model):
     return (true_TTE, n, tte_hat_1stage, tte_hat_2stage)
 
 # each of these is a dict of dicts of dicts of lists... 
-# the outermost dictionary has keys corresponding to the model type
-# the value corresponding to each model is itself a dictionary with keys corresponding to estimator ["1-stage","2-stage"]
-# the value corresponding to each clustering type is a dictionary with keys corresponding to the n values in n_values
-# the value corresponding to each n value is an empty list (to be filled later)
-# e.g. Bias_dict[b][e][n] constains a list of the biases of estimator e under a model with true degree b and size n
+# the outermost dictionary has keys corresponding to the value of q
+# the value corresponding to each q value is itself a dictionary with keys corresponding to model
+# the value corresponding to each model type is a dictionary with keys corresponding to estimator ["1-stage","2-stage"]
+# the value corresponding to each estimator is a dictionary with keys corresponding to sizes (n) and values empty list (to be filled later)
+# e.g. Bias_dict[q][m][e][n] contains the bias of estimator e under model m with population size n and parameter q
 TTE_hat_dict = {q: {m: {e: {n:[] for n in n_values} for e in estimator_list} for m in models} for q in q_values}
 Bias_dict = {q: {m: {e: {n:[] for n in n_values} for e in estimator_list} for m in models} for q in q_values}
 
