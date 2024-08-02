@@ -199,7 +199,7 @@ def pom_dyadic(A,params={'dist':'uniform', 'direct': 1, 'indirect_deg1': 0.5, 'i
     return lambda Z : _outcomes_dyadic(Z,alpha,deg1,deg2)
 
 ######## Treatment Assignments ########
-def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
+def staggered_rollout_two_stage(n,Cl,p,Q,r=1,design='bernoulli'):
     '''
         Returns treatment samples from Bernoulli staggered rollout: (beta+1) x r x n
         n = number of individuals
@@ -207,18 +207,25 @@ def staggered_rollout_two_stage(n,Cl,p,Q,r=1):
         p = treatment budget
         Q = treatment probabilities of selected units for each time step: beta+1
         r = number of replications
+        design = how to choose clusters (either bernoulli or complete randomized design)
     '''
     if len(Cl) == 0:
         Z,U = staggered_rollout_two_stage_unit(n,p,Q,r)
         return (Z,U)
     else:
-        k = len(Cl)
+        nc = len(Cl) # number of clusters
 
-        T = np.zeros((k,n))
+        T = np.zeros((nc,n))
         for (j,cl) in enumerate(Cl):
-            T[j,cl] = 1
+            T[j,cl] = 1  # 2d array indicating cluster membership
 
-        selection_mask = ((rng.rand(r,k) < p/Q[-1]) + 0) @ T
+        if design == 'bernoulli':
+            selection_mask = ((rng.rand(r,nc) < p/Q[-1]) + 0) @ T
+        else:
+            k = int(np.floor((p/Q[-1] * nc)))
+            selection_mask = np.zeros((r,nc))
+            selection_mask[:,:k]=1
+            selection_mask = rng.permuted(selection_mask,axis=1) @ T
 
         Z = np.zeros((len(Q),r,n))
         U = rng.rand(r,n)     # random values that determine when individual i starts being treated
@@ -405,6 +412,21 @@ def ht_hajek_estimate_tte(Z,Y,G,Cl,p,q):
     Hajek_data = np.sum(Y * Ni_fully_treated/prob_fully_treated, axis=1)/nhat1
     Hajek_data -= np.sum(Y * Ni_fully_control/prob_fully_control, axis=1)/nhat2  
     return (HT_data,Hajek_data)
+
+def dyadic_HT(Z_last, Y_last, U, select_prob, treat_prob):
+    '''
+    Returns estimates using 2-stage Horvitz-Thompson estimator from Deng, et al (2024), for each repetition
+
+    Z_last (arr): treatment assignment from final stage, shape=(r,n)
+    Y_last (arr): outcomes from final stage, shape=(r,n)
+    U (arr): units selected from the first stage, shape=(r,n)
+    select_prob (float): probability of unit selection in first stage
+    treat_prob (float): marginaly treatment probability for all units
+    '''
+    n = U.shape[-1]
+    TTE_hat_Y = (1/(n*select_prob*treat_prob)) * np.sum(Z_last * Y_last * U, axis=1)
+    TTE_hat_D = (1/(n*select_prob*(1-treat_prob))) * np.sum((1-Z_last) * Y_last * U, axis=1)
+    return TTE_hat_Y + TTE_hat_D
 
 ######## Utility Function for Computing Effect Sizes ########
 
