@@ -91,6 +91,11 @@ def plot(data, col_var, row_var, outfile):
     f.savefig(outfile)
 
 if __name__ == '__main__':
+    # basic mse:            col = nc              row = beta
+    # compare clustering:   col = cl              row = nc
+    # vary p:               col = p               row = nc 
+    # compare estimators:   col = beta            row = cl
+    # compare designs:      col = s1_design       row = cl
     parser = argparse.ArgumentParser()
     parser.add_argument('infile',help="path to .pkl file that stores experiment data")
     parser.add_argument('outfile', default="bias_var_plot.png", help="path to save the plot to")
