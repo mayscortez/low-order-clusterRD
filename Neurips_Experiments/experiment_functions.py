@@ -5,6 +5,7 @@ import scipy
 from itertools import chain, combinations
 
 rng = RandomState(19025)
+rng_new = np.random.default_rng(19025)
 
 ######## Constructed Networks ########
 
@@ -225,7 +226,7 @@ def staggered_rollout_two_stage(n,Cl,p,Q,r=1,design='bernoulli'):
             k = int(np.floor((p/Q[-1] * nc)))
             selection_mask = np.zeros((r,nc))
             selection_mask[:,:k]=1
-            selection_mask = rng.permuted(selection_mask,axis=1) @ T
+            selection_mask = rng_new.permuted(selection_mask,axis=1) @ T
 
         Z = np.zeros((len(Q),r,n))
         U = rng.rand(r,n)     # random values that determine when individual i starts being treated
