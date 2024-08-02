@@ -34,46 +34,47 @@ def plot(data, col_var, row_var, outfile):
         ncol = 1
 
     colors = ["tab:blue","tab:orange","tab:green"]
+    plt.rcParams.update({"axes.grid" : False, "axes.facecolor" : 'w'})
 
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True) #if nrow=1=ncol, just single plot; otherwise, grid of plots
     plt.setp(ax, xlim=(min(df['q']),1))
     plt.setp(ax, ylim=(0,4))
-    f.set_figheight(10)
-    f.set_figwidth(10)
+    f.set_figheight(nrow*2)
+    f.set_figwidth(ncol*2)
 
     if ncol == 1:
-        ax.fill_between(df['q'], 0, df['bias']**2, color=colors[0], hatch='++', alpha=0.15, label="Bias$^2$")
+        ax.fill_between(df['q'], 0, df['bias']**2, color=colors[0], hatch='++', alpha=0.25, label="Bias$^2$")
         ax.plot(df['q'], df['bias']**2, color=colors[0],alpha=0.5)
 
-        ax.fill_between(df['q'], df['bias']**2, df['bias']**2 + df['var_s'], color=colors[1], alpha=0.15,label="Sampling Variance")
+        ax.fill_between(df['q'], df['bias']**2, df['bias']**2 + df['var_s'], color=colors[1], alpha=0.25,label="Sampling Variance")
         ax.plot(df['q'], df['bias']**2 + df['var_s'], color=colors[1],alpha=0.5)
 
-        ax.fill_between(df['q'], df['bias']**2 + df['var_s'], df['bias']**2 + df['var'], color=colors[2], hatch='\\\\', alpha=0.15, label="Extrapolation Variance")
+        ax.fill_between(df['q'], df['bias']**2 + df['var_s'], df['bias']**2 + df['var'], color=colors[2], hatch='\\\\', alpha=0.25, label="Extrapolation Variance")
         ax.plot(df['q'], df['bias']**2 + df['var'], color='k', linewidth=2, label="MSE")
     else:    
         for j in range(ncol):
             if nrow == 1:
                 cell_df = df[(df[col_var] == cols[j])]
                 ax[j].set_title("{}={}".format(col_var,cols[j]))
-                ax[j].fill_between(cell_df['q'], 0, cell_df['bias']**2, color=colors[0], hatch='++', alpha=0.15, label="Bias$^2$")
+                ax[j].fill_between(cell_df['q'], 0, cell_df['bias']**2, color=colors[0], hatch='++', alpha=0.25, label="Bias$^2$")
                 ax[j].plot(cell_df['q'], cell_df['bias']**2, color=colors[0],alpha=0.5)
 
-                ax[j].fill_between(cell_df['q'], cell_df['bias']**2, cell_df['bias']**2 + cell_df['var_s'], color=colors[1], alpha=0.15, label="Sampling Variance")
+                ax[j].fill_between(cell_df['q'], cell_df['bias']**2, cell_df['bias']**2 + cell_df['var_s'], color=colors[1], alpha=0.25, label="Sampling Variance")
                 ax[j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], color=colors[1],alpha=0.5)
 
-                ax[j].fill_between(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], cell_df['bias']**2 + cell_df['var'], hatch='\\\\', alpha=0.15, label="Extrapolation Variance")
+                ax[j].fill_between(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], cell_df['bias']**2 + cell_df['var'], color=colors[2],hatch='\\\\', alpha=0.25, label="Extrapolation Variance")
                 ax[j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var'], color='k', linewidth=2, label="MSE")
             else:
                 ax[0,j].set_title("{}={}".format(col_var,cols[j]))
                 for i in range(nrow):
                     cell_df = df[(df[row_var] == rows[i]) & (df[col_var] == cols[j])]
-                    ax[i,j].fill_between(cell_df['q'], 0, cell_df['bias']**2, color=colors[0], hatch='++', alpha=0.15, label="Bias$^2$")
+                    ax[i,j].fill_between(cell_df['q'], 0, cell_df['bias']**2, color=colors[0], hatch='++', alpha=0.25, label="Bias$^2$")
                     ax[i,j].plot(cell_df['q'], cell_df['bias']**2, color=colors[0],alpha=0.5)
 
-                    ax[i,j].fill_between(cell_df['q'], cell_df['bias']**2, cell_df['bias']**2 + cell_df['var_s'], color=colors[1], alpha=0.15, label="Sampling Variance")
+                    ax[i,j].fill_between(cell_df['q'], cell_df['bias']**2, cell_df['bias']**2 + cell_df['var_s'], color=colors[1], alpha=0.25, label="Sampling Variance")
                     ax[i,j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], color=colors[1],alpha=0.5)
 
-                    ax[i,j].fill_between(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], cell_df['bias']**2 + cell_df['var'], color=colors[2], hatch='\\\\', alpha=0.15, label="Extrapolation Variance")
+                    ax[i,j].fill_between(cell_df['q'], cell_df['bias']**2 + cell_df['var_s'], cell_df['bias']**2 + cell_df['var'], color=colors[2], hatch='\\\\', alpha=0.25, label="Extrapolation Variance")
                     ax[i,j].plot(cell_df['q'], cell_df['bias']**2 + cell_df['var'], color='k', linewidth=2, label="MSE")
     
     if nrow != 1:
@@ -85,8 +86,9 @@ def plot(data, col_var, row_var, outfile):
     #f.suptitle("SBM, Ugander-Yin Potential Outcomes")
     
     ax[0,0].legend(prop={'size':12})
-    plt.tight_layout()
+    #plt.legend(fontsize=20,facecolor='w',edgecolor='k')
 
+    plt.tight_layout()
     plt.show()
     f.savefig(outfile)
 
