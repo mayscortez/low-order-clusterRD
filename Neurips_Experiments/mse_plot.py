@@ -39,8 +39,8 @@ def plot(data, col_var, row_var, outfile):
     f,ax = plt.subplots(nrow,ncol, sharex=True, sharey=True) #if nrow=1=ncol, just single plot; otherwise, grid of plots
     plt.setp(ax, xlim=(min(df['q']),1))
     plt.setp(ax, ylim=(0,4))
-    f.set_figheight(nrow*2)
-    f.set_figwidth(ncol*2)
+    f.set_figheight(nrow*3)
+    f.set_figwidth(ncol*3)
 
     if ncol == 1:
         ax.fill_between(df['q'], 0, df['bias']**2, color=colors[0], hatch='++', alpha=0.25, label="Bias$^2$")
@@ -85,7 +85,12 @@ def plot(data, col_var, row_var, outfile):
     #f.supylabel("clustering")
     #f.suptitle("SBM, Ugander-Yin Potential Outcomes")
     
-    ax[0,0].legend(prop={'size':12})
+    
+    if (nrow == 1) or (ncol == 1):
+        ax[0].legend(fontsize=20, facecolor='w', edgecolor='k', prop={'size':12})
+    else:
+        ax[0,0].legend(fontsize=20, facecolor='w', edgecolor='k', prop={'size':12}) 
+    #ax[0,0].legend(prop={'size':12})
     #plt.legend(fontsize=20,facecolor='w',edgecolor='k')
 
     plt.tight_layout()
