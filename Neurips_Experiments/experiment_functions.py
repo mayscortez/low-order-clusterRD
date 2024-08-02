@@ -223,9 +223,17 @@ def staggered_rollout_two_stage(n,Cl,p,Q,r=1,design='bernoulli'):
         if design == 'bernoulli':
             selection_mask = ((rng.rand(r,nc) < p/Q[-1]) + 0) @ T
         else:
-            k = int(np.floor((p/Q[-1] * nc)))
+            k_ceil = int(np.ceil(p/Q[-1] * nc))
+            k_floor = int(np.floor(p/Q[-1] * nc))
+
+            bias = (p/Q[-1] * nc) - np.floor(p/Q[-1] * nc)
+            coin_flip = (rng.rand(r) < bias)+0
+            ceils = np.where(coin_flip==1)[0]
+            floors = np.where(coin_flip==0)[0]
+
             selection_mask = np.zeros((r,nc))
-            selection_mask[:,:k]=1
+            selection_mask[ceils, :k_ceil] = 1
+            selection_mask[floors, :k_floor] = 1
             selection_mask = rng_new.permuted(selection_mask,axis=1) @ T
 
         Z = np.zeros((len(Q),r,n))
