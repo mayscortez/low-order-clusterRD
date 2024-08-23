@@ -3,7 +3,7 @@
     "network" : "Amazon",
     "input" : "Network/data.pkl",
     "vary" : {
-        "nc" : [50,200,500]
+        "nc" : [500]
     },
     "fix" : {
         "p" : 0.1,
