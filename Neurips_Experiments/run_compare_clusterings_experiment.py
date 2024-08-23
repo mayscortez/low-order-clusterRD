@@ -63,6 +63,8 @@ def run_experiment(G,Cls,fixed,varied,r):
 
         cluster_dict[nc]["random"] = Cl_random
 
+        cluster_dict[nc]["none"] = []
+
     for beta in betas:
         fY = pom_ugander_yin(G,h,beta)
         TTE = np.sum(fY(np.ones(n))-fY(np.zeros(n)))/n

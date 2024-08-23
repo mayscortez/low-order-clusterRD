@@ -15,11 +15,11 @@ df['mse'] = df['bias']**2 + df['var']
 
 colors = ["tab:blue","tab:orange","tab:green"]
 
-f,ax = plt.subplots(1,3, sharex=True, sharey=True)
-f.set_figheight(2)
-f.set_figwidth(8)
+f,ax = plt.subplots(1,4, sharex=True, sharey=True)
+f.set_figheight(4)
+f.set_figwidth(12)
 plt.setp(ax, xlim=(min(df['q']),1))
-plt.setp(ax, ylim=(0,0.3))
+plt.setp(ax, ylim=(0,0.8))
 
 ax[1].yaxis.set_tick_params(which='both', labelleft=True)
 ax[2].yaxis.set_tick_params(which='both', labelleft=True)
@@ -27,8 +27,9 @@ ax[2].yaxis.set_tick_params(which='both', labelleft=True)
 ax[0].set_title("Full Graph Knowledge", fontsize=16)
 ax[1].set_title("Covariate Knowledge", fontsize=16)
 ax[2].set_title("No Graph Knowledge", fontsize=16)
+ax[3].set_title("No Clustering", fontsize=16)
 
-for i,cl in enumerate(["graph","feature","random"]):
+for i,cl in enumerate(["graph","feature","random","none"]):
     axis = ax[i]
     cell_df = df[df['clustering'] == cl]
 
@@ -48,5 +49,6 @@ for axis in ax:
 
 f.subplots_adjust(bottom=0.25)
 ax[0].legend(prop={'size': 12})
+plt.tight_layout()
 plt.show()
 f.savefig("compare_clusterings_plot.png",bbox_inches='tight')
