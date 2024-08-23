@@ -106,7 +106,7 @@ def pom_ugander_yin(G,h,beta):
     else:
         gamma = [0.5**(k-1) for k in range(beta+1)]   # magnitude of subset treatment effects
     '''
-    gamma = [0.75**(k-1) for k in range(beta+1)] 
+    gamma = [0.5**(k-1) for k in range(beta+1)] #0.75
     tau = 0                                       # magnitude of random perturbation on treatment effects
 
     n = G.shape[0]
